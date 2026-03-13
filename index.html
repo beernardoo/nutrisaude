@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriSaúde — Gestão Nutricional &amp; Medicamentos</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- SheetJS para XLSX/XLS -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- PDF.js para leitura de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Tesseract.js OCR — fallback para PDFs baseados em imagem (laudos escaneados) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <!-- Supabase JS — banco de dados e autenticação -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <!-- Chart.js para gráficos do dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🩺</span>
+        <div>
+          <h1>NutriSaúde</h1>
+          <p>Gestão Nutricional &amp; Medicamentos</p>
+        </div>
+      </div>
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="medicamentos">💊 Medicamentos</button>
+        <button class="tab-btn" data-tab="exames">🔬 Exames</button>
+        <button class="tab-btn" data-tab="alimentos">🥗 Alimentos</button>
+        <button class="tab-btn" data-tab="plano">📋 Plano Alimentar</button>
+        <button class="tab-btn" data-tab="suplementacao">💊 Suplementação</button>
+        <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+      </nav>
+      <div class="header-user">
+        <span id="user-email-display" class="user-email"></span>
+        <button class="btn-logout" id="btn-logout" onclick="authLogout()" title="Sair da conta">⎋ Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ==================== ABA: MEDICAMENTOS ==================== -->
+    <section id="tab-medicamentos" class="tab-panel active">
+      <div class="section-header">
+        <h2>💊 Observações de Medicamentos</h2>
+        <p>Registre e acompanhe o uso de medicamentos do paciente</p>
+      </div>
+
+      <!-- Perfil do paciente -->
+      <div class="card">
+        <div class="card-header">👤 Dados do Paciente</div>
+        <div class="card-body">
+          <div class="form-row-info">
+            <div class="form-group">
+              <label>Nome do Paciente</label>
+              <input type="text" id="paciente-nome" placeholder="Ex: João Silva" />
+            </div>
+            <div class="form-group">
+              <label>Nascimento</label>
+              <input type="date" id="paciente-nascimento" />
+            </div>
+            <div class="form-group">
+              <label>Médico Responsável</label>
+              <input type="text" id="paciente-medico" placeholder="Ex: Dr. Ana Costa" />
+            </div>
+            <div class="form-group">
+              <label>CRM do Médico</label>
+              <input type="text" id="paciente-crm" placeholder="CRM-SP 12345" />
+            </div>
+          </div>
+
+          <!-- Campos Biométricos -->
+          <div class="form-row-bio">
+            <div class="form-group">
+              <label>Sexo</label>
+              <select id="paciente-sexo">
+                <option value="">Selecione</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Peso (kg)</label>
+              <input type="number" id="paciente-peso" placeholder="80" step="0.1" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Altura (cm)</label>
+              <input type="number" id="paciente-altura" placeholder="170" step="1" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Cintura (cm)</label>
+              <input type="number" id="paciente-cintura" placeholder="90" step="0.5" min="1" />
+            </div>
+            <div class="form-group">
+              <label>Atividade</label>
+              <select id="paciente-atividade">
+                <option value="">Selecione</option>
+                <option value="sedentario">Sedentário</option>
+                <option value="leve">Leve (1-3x/sem)</option>
+                <option value="moderado">Moderado (3-5x/sem)</option>
+                <option value="ativo">Ativo (6-7x/sem)</option>
+                <option value="muito_ativo">Muito ativo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Objetivo</label>
+              <select id="paciente-objetivo">
+                <option value="">Selecione</option>
+                <option value="emagrecer">Emagrecer</option>
+                <option value="manter">Manter peso</option>
+                <option value="ganhar_massa">Ganhar massa</option>
+                <option value="saude">Saúde geral</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>IMC <span id="imc-valor" style="color:#667eea;font-weight:700"></span></label>
+              <input type="text" id="imc-resultado" placeholder="Automático" readonly style="background:#f8f9fa" />
+            </div>
+          </div>
+
+          <!-- Separador: Medicamentos em Uso -->
+          <div class="secao-paciente-titulo">
+            <span>💊 Medicamentos em Uso Atual</span>
+            <button class="btn btn-sm btn-outline" onclick="adicionarLinhaUsoMed()">+ Adicionar</button>
+          </div>
+          <div id="uso-med-lista">
+            <!-- linhas dinâmicas -->
+          </div>
+          <p class="campo-hint">Informe todos os medicamentos que o paciente utiliza atualmente com dosagem e frequência.</p>
+
+          <!-- Separador: Análogos GLP-1 -->
+          <div class="secao-paciente-titulo glp1-titulo">
+            <span>⭐ Uso de Análogo de Emagrecimento (GLP-1 / GIP)</span>
+          </div>
+          <div class="glp1-check-row">
+            <label class="toggle-label">
+              <input type="checkbox" id="glp1-ativo" onchange="toggleGlp1()" />
+              <span class="toggle-slider"></span>
+              <span>O paciente faz uso de Tirzepatida, Semaglutida ou outro análogo de emagrecimento</span>
+            </label>
+          </div>
+          <div id="glp1-detalhe" style="display:none">
+            <div class="form-grid" style="margin-top:12px">
+              <div class="form-group">
+                <label>Medicamento Análogo <span class="obrigatorio">*</span></label>
+                <select id="glp1-tipo" onchange="atualizarAlertaGlp1()">
+                  <option value="">Selecione...</option>
+                  <optgroup label="GIP + GLP-1 (Duplo Agonista)">
+                    <option value="Tirzepatida (Mounjaro / Zepbound)">Tirzepatida (Mounjaro / Zepbound)</option>
+                  </optgroup>
+                  <optgroup label="GLP-1">
+                    <option value="Semaglutida semanal (Ozempic / Wegovy)">Semaglutida semanal (Ozempic / Wegovy)</option>
+                    <option value="Liraglutida diária (Saxenda / Victoza)">Liraglutida diária (Saxenda / Victoza)</option>
+                    <option value="Dulaglutida semanal (Trulicity)">Dulaglutida semanal (Trulicity)</option>
+                    <option value="Exenatida (Byetta / Bydureon)">Exenatida (Byetta / Bydureon)</option>
+                  </optgroup>
+                  <optgroup label="Outro">
+                    <option value="Outro análogo">Outro análogo (especificar abaixo)</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Dose Atual <span class="obrigatorio">*</span></label>
+                <input type="text" id="glp1-dose" placeholder="Ex: 2,5mg / 5mg / 7,5mg" oninput="atualizarAlertaGlp1()" />
+              </div>
+              <div class="form-group">
+                <label>Frequência</label>
+                <select id="glp1-freq">
+                  <option value="Semanal">Semanal</option>
+                  <option value="Diária">Diária</option>
+                  <option value="Quinzenal">Quinzenal</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Início do Tratamento</label>
+                <input type="date" id="glp1-inicio" />
+              </div>
+            </div>
+
+            <!-- Alerta de suplementação vitamínica -->
+            <div class="glp1-alerta" id="glp1-alerta-box">
+              <div class="glp1-alerta-header">
+                <span class="glp1-alerta-icone">⚠️</span>
+                <strong>Atenção: Monitoramento Vitamínico Recomendado</strong>
+              </div>
+              <p class="glp1-alerta-intro">
+                Pacientes em uso de análogos GLP-1/GIP apresentam maior risco de deficiências nutricionais devido à
+                redução do apetite, náusea, menor absorção gástrica e diminuição do consumo alimentar. Com base em
+                estudos clínicos publicados, recomenda-se monitorar e considerar suplementação das seguintes vitaminas
+                e minerais:
+              </p>
+              <div class="glp1-vitaminas-grid" id="glp1-vitaminas-grid">
+                <!-- preenchido por JS -->
+              </div>
+              <div class="glp1-disclaimer">
+                ⚕️ <strong>Aviso:</strong> As recomendações acima são baseadas em estudos científicos e revisões clínicas
+                disponíveis na literatura médica (2020–2024). Elas <strong>não substituem a avaliação médica</strong> individualizada.
+                Para uma análise personalizada, <a href="#" onclick="irParaAba('suplementacao');return false;">
+                cadastre os exames laboratoriais do paciente na aba Suplementação →</a>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="salvarPerfil()">💾 Salvar Dados do Paciente</button>
+            <button class="btn btn-outline" onclick="limparPerfil()">🗑 Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload de receita -->
+      <div class="card">
+        <div class="card-header">📋 Importar Receita Médica <span class="badge-formatos">CSV · XLSX · XLS · PDF</span></div>
+        <div class="card-body">
+          <div class="upload-area" id="upload-area-receita">
+            <input type="file" id="file-input-receita" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="processarArquivoReceita(this.files[0])" />
+            <div class="upload-icon">🗒️</div>
+            <p class="upload-titulo">Arraste a receita aqui ou clique para selecionar</p>
+            <p class="upload-hint">Formatos aceitos: <strong>CSV</strong>, <strong>XLSX / XLS</strong>, <strong>PDF</strong> (receita do médico)</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn-primary" onclick="document.getElementById('file-input-receita').click()">📁 Selecionar Receita</button>
+              <button class="btn btn-outline" onclick="baixarTemplateCSVReceita()">⬇ Baixar Template CSV</button>
+            </div>
+          </div>
+          <div id="upload-status-receita" style="display:none" class="upload-status"></div>
+        </div>
+      </div>
+
+      <!-- Novo medicamento -->
+      <div class="card">
+        <div class="card-header">➕ Adicionar Medicamento</div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Nome do Medicamento</label>
+              <input type="text" id="med-nome" placeholder="Ex: Metformina" />
+            </div>
+            <div class="form-group">
+              <label>Dosagem</label>
+              <input type="text" id="med-dosagem" placeholder="Ex: 500mg" />
+            </div>
+            <div class="form-group">
+              <label>Frequência</label>
+              <select id="med-frequencia">
+                <option value="">Selecione...</option>
+                <option value="1x ao dia">1x ao dia</option>
+                <option value="2x ao dia">2x ao dia</option>
+                <option value="3x ao dia">3x ao dia</option>
+                <option value="Em jejum">Em jejum</option>
+                <option value="Após as refeições">Após as refeições</option>
+                <option value="Antes de dormir">Antes de dormir</option>
+                <option value="A cada 8h">A cada 8h</option>
+                <option value="A cada 12h">A cada 12h</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data de Início</label>
+              <input type="date" id="med-inicio" />
+            </div>
+            <div class="form-group full-width">
+              <label>Observações / Efeitos Colaterais</label>
+              <textarea id="med-obs" rows="3" placeholder="Descreva observações, reações, efeitos percebidos..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Registrado por</label>
+              <select id="med-registrado">
+                <option value="Médico">Médico</option>
+                <option value="Paciente">Paciente</option>
+                <option value="Familiar">Familiar</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarMedicamento()">➕ Adicionar Medicamento</button>
+        </div>
+      </div>
+
+      <!-- Lista de medicamentos -->
+      <div class="card">
+        <div class="card-header">📋 Medicamentos Cadastrados</div>
+        <div class="card-body">
+          <div id="lista-medicamentos" class="med-list">
+            <div class="empty-state">Nenhum medicamento cadastrado ainda.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ABA: EXAMES ==================== -->
+    <section id="tab-exames" class="tab-panel">
+      <div class="section-header">
+        <h2>🔬 Exames Laboratoriais</h2>
+        <p>Compare seus resultados com os valores de referência</p>
+      </div>
+
+      <!-- Upload de arquivo -->
+      <div class="card">
+        <div class="card-header">📂 Importar Exames por Arquivo <span class="badge-formatos">CSV · XLSX · XLS · PDF</span></div>
+        <div class="card-body">
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.pdf" style="display:none" onchange="processarArquivo(this.files[0])" />
+            <div class="upload-icon">📄</div>
+            <p class="upload-titulo">Arraste o arquivo aqui ou clique para selecionar</p>
+            <p class="upload-hint">Formatos aceitos: <strong>CSV</strong>, <strong>XLSX / XLS</strong>, <strong>PDF</strong> (laudos de laboratório)</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+              <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">📁 Selecionar Arquivo</button>
+              <button class="btn btn-outline" onclick="baixarTemplateCSV()">⬇ Baixar Template CSV</button>
+            </div>
+          </div>
+          <div id="upload-status" style="display:none" class="upload-status"></div>
+        </div>
+      </div>
+
+      <!-- Novo exame -->
+      <div class="card">
+        <div class="card-header">➕ Lançar Resultado de Exame</div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tipo de Exame</label>
+              <select id="exame-tipo" onchange="preencherReferencia()">
+                <option value="">Selecione o exame...</option>
+                <optgroup label="Glicemia / Metabolismo">
+                  <option value="glicemia_jejum">Glicemia em Jejum</option>
+                  <option value="hba1c">Hemoglobina Glicada (HbA1c)</option>
+                  <option value="insulina">Insulina (Basal)</option>
+                </optgroup>
+                <optgroup label="Lipidograma">
+                  <option value="colesterol_total">Colesterol Total</option>
+                  <option value="hdl">HDL (Colesterol Bom)</option>
+                  <option value="ldl">LDL (Colesterol Ruim)</option>
+                  <option value="vldl">VLDL</option>
+                  <option value="triglicerideos">Triglicerídeos</option>
+                  <option value="apolipo_a1">Apolipoproteína A1</option>
+                  <option value="apolipo_b">Apolipoproteína B</option>
+                </optgroup>
+                <optgroup label="Função Renal">
+                  <option value="creatinina">Creatinina</option>
+                  <option value="ureia">Ureia</option>
+                  <option value="acido_urico">Ácido Úrico</option>
+                </optgroup>
+                <optgroup label="Função Hepática / Pancreática">
+                  <option value="tgo">TGO (AST)</option>
+                  <option value="tgp">TGP (ALT)</option>
+                  <option value="ggt">GGT</option>
+                  <option value="fosfatase_alcalina">Fosfatase Alcalina</option>
+                  <option value="bilirrubina_total">Bilirrubina Total</option>
+                  <option value="bilirrubina_direta">Bilirrubina Direta</option>
+                  <option value="amilase">Amilase</option>
+                  <option value="lipase">Lipase</option>
+                </optgroup>
+                <optgroup label="Inflamação / Cardiovascular">
+                  <option value="pcr">Proteína C Reativa (PCR)</option>
+                  <option value="homocisteina">Homocisteína</option>
+                </optgroup>
+                <optgroup label="Hemograma">
+                  <option value="hemoglobina">Hemoglobina</option>
+                  <option value="hematocrito">Hematócrito</option>
+                  <option value="leucocitos">Leucócitos</option>
+                  <option value="plaquetas">Plaquetas</option>
+                </optgroup>
+                <optgroup label="Tireoide">
+                  <option value="tsh">TSH</option>
+                  <option value="t4l">T4 Livre</option>
+                  <option value="t3l">T3 Livre</option>
+                  <option value="t3r">T3 Reverso</option>
+                </optgroup>
+                <optgroup label="Hormônios Sexuais">
+                  <option value="testosterona_total">Testosterona Total</option>
+                  <option value="testosterona_livre">Testosterona Livre</option>
+                  <option value="estradiol">Estradiol</option>
+                  <option value="shbg">SHBG</option>
+                  <option value="prolactina">Prolactina</option>
+                </optgroup>
+                <optgroup label="Vitaminas e Minerais">
+                  <option value="vitamina_d">Vitamina D</option>
+                  <option value="vitamina_b12">Vitamina B12</option>
+                  <option value="vitamina_c">Vitamina C</option>
+                  <option value="ferro">Ferro Sérico</option>
+                  <option value="ferritina">Ferritina</option>
+                  <option value="magnesio">Magnésio</option>
+                  <option value="zinco">Zinco Sérico</option>
+                  <option value="selenio">Selênio Sérico</option>
+                </optgroup>
+                <optgroup label="Pressão Arterial">
+                  <option value="pressao_sistolica">Pressão Sistólica</option>
+                  <option value="pressao_diastolica">Pressão Diastólica</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Seu Resultado</label>
+              <input type="number" id="exame-resultado" step="0.01" placeholder="Ex: 95" />
+            </div>
+            <div class="form-group">
+              <label>Unidade</label>
+              <input type="text" id="exame-unidade" placeholder="Ex: mg/dL" readonly />
+            </div>
+            <div class="form-group">
+              <label>Data do Exame</label>
+              <input type="date" id="exame-data" />
+            </div>
+            <div class="form-group full-width">
+              <label>Referência Normal</label>
+              <input type="text" id="exame-referencia" readonly class="input-info" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarExame()">🔬 Registrar Exame</button>
+        </div>
+      </div>
+
+      <!-- Tabela de exames -->
+      <div class="card">
+        <div class="card-header">📊 Histórico de Exames</div>
+        <div class="card-body">
+          <div id="lista-exames">
+            <div class="empty-state">Nenhum exame registrado ainda.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel de referências -->
+      <div class="card">
+        <div class="card-header">📖 Tabela de Valores de Referência</div>
+        <div class="card-body">
+          <div class="ref-table-wrapper">
+            <table class="ref-table">
+              <thead>
+                <tr>
+                  <th>Exame</th>
+                  <th>Valor Normal</th>
+                  <th>Unidade</th>
+                  <th>Atenção</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Glicemia em Jejum</td><td>70 – 99</td><td>mg/dL</td><td>≥ 100 pré-diabetes | ≥ 126 diabetes</td></tr>
+                <tr><td>HbA1c</td><td>&lt; 5,7%</td><td>%</td><td>5,7–6,4% pré-diabetes | ≥ 6,5% diabetes</td></tr>
+                <tr><td>Colesterol Total</td><td>&lt; 200</td><td>mg/dL</td><td>200–239 limítrofe | ≥ 240 alto</td></tr>
+                <tr><td>HDL</td><td>&gt; 60 (ótimo)</td><td>mg/dL</td><td>&lt; 40 homens / &lt; 50 mulheres = risco</td></tr>
+                <tr><td>LDL</td><td>&lt; 100</td><td>mg/dL</td><td>130–159 limítrofe | ≥ 160 alto</td></tr>
+                <tr><td>Triglicerídeos</td><td>&lt; 150</td><td>mg/dL</td><td>150–199 limítrofe | ≥ 200 alto</td></tr>
+                <tr><td>Creatinina</td><td>0,6 – 1,2</td><td>mg/dL</td><td>Varia por sexo e massa muscular</td></tr>
+                <tr><td>Ureia</td><td>10 – 50</td><td>mg/dL</td><td>—</td></tr>
+                <tr><td>Ácido Úrico</td><td>3,5 – 7,2</td><td>mg/dL</td><td>&gt; 7 risco de gota</td></tr>
+                <tr><td>TGO (AST)</td><td>10 – 40</td><td>U/L</td><td>Elevado = dano hepático</td></tr>
+                <tr><td>TGP (ALT)</td><td>7 – 56</td><td>U/L</td><td>Elevado = dano hepático</td></tr>
+                <tr><td>GGT</td><td>9 – 48</td><td>U/L</td><td>Elevado = álcool ou fígado</td></tr>
+                <tr><td>Hemoglobina</td><td>12 – 17</td><td>g/dL</td><td>H: 13,5–17,5 | M: 12–15,5</td></tr>
+                <tr><td>Hematócrito</td><td>36 – 52</td><td>%</td><td>H: 41–53% | M: 36–46%</td></tr>
+                <tr><td>Leucócitos</td><td>4.000 – 11.000</td><td>/mm³</td><td>—</td></tr>
+                <tr><td>Plaquetas</td><td>150.000 – 400.000</td><td>/mm³</td><td>—</td></tr>
+                <tr><td>TSH</td><td>0,4 – 4,0</td><td>mUI/L</td><td>&lt; 0,4 hipertireoidismo | &gt; 4 hipotireoidismo</td></tr>
+                <tr><td>T4 Livre</td><td>0,8 – 1,8</td><td>ng/dL</td><td>—</td></tr>
+                <tr><td>Vitamina D</td><td>30 – 100</td><td>ng/mL</td><td>&lt; 20 deficiência | 20–29 insuficiência</td></tr>
+                <tr><td>Vitamina B12</td><td>200 – 900</td><td>pg/mL</td><td>&lt; 200 deficiência</td></tr>
+                <tr><td>Ferro Sérico</td><td>60 – 170</td><td>µg/dL</td><td>—</td></tr>
+                <tr><td>Ferritina</td><td>12 – 300</td><td>ng/mL</td><td>H: 30–400 | M: 15–150</td></tr>
+                <tr><td>Pressão Sistólica</td><td>&lt; 120</td><td>mmHg</td><td>120–129 elevada | ≥ 130 alta</td></tr>
+                <tr><td>Pressão Diastólica</td><td>&lt; 80</td><td>mmHg</td><td>≥ 80 hipertensão</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ABA: ALIMENTOS ==================== -->
+    <section id="tab-alimentos" class="tab-panel">
+      <div class="section-header">
+        <h2>🥗 Tabela de Alimentos e Calorias</h2>
+        <p>Consulte os macronutrientes por porção de 100g</p>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card">
+        <div class="card-body">
+          <div class="filter-row">
+            <input type="text" id="busca-alimento" placeholder="🔍 Buscar alimento..." oninput="filtrarAlimentos()" />
+            <div class="filter-chips">
+              <button class="chip active" onclick="filtrarCategoria('todos', this)">Todos</button>
+              <button class="chip carb" onclick="filtrarCategoria('carboidrato', this)">🍞 Carboidratos</button>
+              <button class="chip prot" onclick="filtrarCategoria('proteina', this)">🥩 Proteínas</button>
+              <button class="chip gord" onclick="filtrarCategoria('gordura_boa', this)">🥑 Gorduras Boas</button>
+              <button class="chip veg" onclick="filtrarCategoria('vegetal', this)">🥦 Vegetais</button>
+              <button class="chip frut" onclick="filtrarCategoria('fruta', this)">🍎 Frutas</button>
+              <button class="chip laticinio" onclick="filtrarCategoria('laticinio', this)">🧀 Laticínios</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="food-grid" id="food-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ABA: PLANO ALIMENTAR ==================== -->
+    <section id="tab-plano" class="tab-panel">
+      <div class="section-header">
+        <h2>📋 Plano Alimentar Semanal</h2>
+        <p>Monte refeições e acompanhe macros diários</p>
+      </div>
+
+      <!-- Modo do plano -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-body" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;padding:14px 20px">
+          <div style="display:flex;gap:8px">
+            <button id="btn-modo-medico" class="btn btn-sm btn-modo-plano active" onclick="setModoPlano('medico')">👨‍⚕️ Modo Médico</button>
+            <button id="btn-modo-paciente" class="btn btn-sm btn-outline btn-modo-plano" onclick="setModoPlano('paciente')">👤 Modo Paciente</button>
+          </div>
+          <p id="plano-modo-desc" style="margin:0;font-size:.88rem;color:#555">
+            👨‍⚕️ <strong>Modo Médico</strong> — Editando plano prescrito para o paciente
+          </p>
+        </div>
+      </div>
+
+      <!-- Configuração de metas -->
+      <div class="card">
+        <div class="card-header">🎯 Metas Diárias de Macronutrientes</div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Calorias Totais (kcal)</label>
+              <input type="number" id="meta-kcal" value="2000" oninput="calcularMetas()" />
+            </div>
+            <div class="form-group">
+              <label>Carboidratos (%)</label>
+              <input type="number" id="meta-carb-pct" value="50" min="0" max="100" oninput="calcularMetas()" />
+            </div>
+            <div class="form-group">
+              <label>Proteínas (%)</label>
+              <input type="number" id="meta-prot-pct" value="25" min="0" max="100" oninput="calcularMetas()" />
+            </div>
+            <div class="form-group">
+              <label>Gorduras (%)</label>
+              <input type="number" id="meta-gord-pct" value="25" min="0" max="100" oninput="calcularMetas()" />
+            </div>
+          </div>
+          <div class="macro-bars" id="macro-bars"></div>
+        </div>
+      </div>
+
+      <!-- Adicionar refeição ao plano -->
+      <div class="card" id="plano-add-card">
+        <div class="card-header">➕ Adicionar Refeição ao Plano</div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Dia da Semana</label>
+              <select id="plano-dia">
+                <option value="Segunda">Segunda-feira</option>
+                <option value="Terça">Terça-feira</option>
+                <option value="Quarta">Quarta-feira</option>
+                <option value="Quinta">Quinta-feira</option>
+                <option value="Sexta">Sexta-feira</option>
+                <option value="Sábado">Sábado</option>
+                <option value="Domingo">Domingo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Refeição</label>
+              <select id="plano-refeicao">
+                <option value="Café da manhã">☀️ Café da manhã</option>
+                <option value="Lanche da manhã">🍎 Lanche da manhã</option>
+                <option value="Almoço">🍽️ Almoço</option>
+                <option value="Lanche da tarde">🥗 Lanche da tarde</option>
+                <option value="Jantar">🌙 Jantar</option>
+                <option value="Ceia">🌛 Ceia</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Alimento</label>
+              <select id="plano-alimento">
+                <option value="">Selecione...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantidade (g)</label>
+              <input type="number" id="plano-qtd" value="100" min="1" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="adicionarAoPlano()">➕ Adicionar ao Plano</button>
+        </div>
+      </div>
+
+      <!-- Plano semanal -->
+      <div id="plano-semanal" class="plano-semanal"></div>
+    </section>
+
+    <!-- ==================== ABA: SUPLEMENTAÇÃO ==================== -->
+    <section id="tab-suplementacao" class="tab-panel">
+      <div class="section-header">
+        <h2>💊 Análise de Suplementação</h2>
+        <p>Indicativos personalizados baseados nos exames laboratoriais cadastrados do paciente</p>
+      </div>
+
+      <!-- Painel de status dos exames -->
+      <div class="card">
+        <div class="card-header">🔬 Status dos Exames do Paciente</div>
+        <div class="card-body">
+          <div id="suple-sem-exames" class="empty-state" style="display:none">
+            ⚠️ Nenhum exame cadastrado. Acesse a aba <strong>Exames</strong> para inserir os resultados laboratoriais do paciente.
+          </div>
+          <div id="suple-resumo-exames">
+            <!-- preenchido por JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards de análise -->
+      <div id="suple-cards-grid" class="suple-grid">
+        <!-- preenchido por JS -->
+      </div>
+
+      <!-- Painel GLP-1 adicional -->
+      <div id="suple-glp1-panel" style="display:none">
+        <div class="card suple-card-glp1">
+          <div class="card-header">⭐ Suplementação Prioritária — Uso de Análogo GLP-1/GIP</div>
+          <div class="card-body">
+            <p class="suple-glp1-intro" id="suple-glp1-intro"></p>
+            <div id="suple-glp1-lista" class="suple-vitaminas-lista"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legenda -->
+      <div class="card suple-legenda-card">
+        <div class="card-header">📖 Como interpretar esta análise</div>
+        <div class="card-body suple-legenda-body">
+          <div class="suple-legenda-item"><span class="badge-suple critico">DEFICIENTE</span> Valor abaixo do mínimo recomendado — suplementação indicada</div>
+          <div class="suple-legenda-item"><span class="badge-suple baixo">INSUFICIENTE</span> Próximo ao limite inferior — atenção redobrada e possível suplementação</div>
+          <div class="suple-legenda-item"><span class="badge-suple normal">ADEQUADO</span> Dentro da faixa normal de referência</div>
+          <div class="suple-legenda-item"><span class="badge-suple alto">ELEVADO</span> Acima do valor máximo — evitar suplementação desse nutriente</div>
+          <div class="suple-legenda-item"><span class="badge-suple sem-exame">SEM EXAME</span> Exame não cadastrado — solicite ao médico</div>
+          <div class="suple-disclaimer-box">
+            ⚕️ <strong>Aviso importante:</strong> Esta análise é uma ferramenta de apoio baseada em referências clínicas publicadas.
+            As recomendações <strong>não substituem a avaliação e prescrição médica</strong>. Todas as suplementações devem ser
+            discutidas com o profissional de saúde responsável. Valores de referência podem variar por laboratório, sexo e faixa etária.
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-primary" onclick="gerarAnaliseSuple()">🔄 Atualizar Análise</button>
+        <button class="btn btn-outline" onclick="irParaAba('exames')">🔬 Ir para Exames</button>
+      </div>
+    </section>
+
+    <!-- ==================== ABA: DASHBOARD ==================== -->
+    <section id="tab-dashboard" class="tab-panel">
+      <div class="section-header">
+        <h2>📊 Dashboard — Evolução do Paciente</h2>
+        <p>Acompanhe a evolução ao longo do tempo com gráficos e histórico</p>
+      </div>
+
+      <!-- Cabeçalho do paciente -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-body" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em">Paciente</div>
+            <div id="dash-nome-paciente" style="font-size:1.5rem;font-weight:700;color:var(--primary)">—</div>
+          </div>
+          <div style="color:#aaa;font-size:1.2rem">|</div>
+          <div>
+            <div style="font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.04em">Último Registro</div>
+            <div id="dash-ultimo-registro" style="font-size:1rem;font-weight:600;color:#444">—</div>
+          </div>
+          <div style="margin-left:auto">
+            <button class="btn btn-primary" onclick="abrirModalPeso()">➕ Registrar Peso</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards de indicadores -->
+      <div class="dashboard-grid">
+        <div class="dash-card dash-card-verde">
+          <div class="dash-card-icon">⚖️</div>
+          <div>
+            <div class="dash-card-label">Peso Atual</div>
+            <div class="dash-card-value"><span id="dash-peso-atual">—</span> <span style="font-size:.85rem;font-weight:400">kg</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-azul">
+          <div class="dash-card-icon">📐</div>
+          <div>
+            <div class="dash-card-label">IMC</div>
+            <div class="dash-card-value"><span id="dash-imc">—</span> <span style="font-size:.75rem;font-weight:400">kg/m²</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-laranja">
+          <div class="dash-card-icon">📏</div>
+          <div>
+            <div class="dash-card-label">Cintura</div>
+            <div class="dash-card-value"><span id="dash-cintura-atual">—</span> <span style="font-size:.85rem;font-weight:400">cm</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-roxo">
+          <div class="dash-card-icon">⚡</div>
+          <div>
+            <div class="dash-card-label">TDEE</div>
+            <div class="dash-card-value"><span id="dash-tdee">—</span> <span style="font-size:.75rem;font-weight:400">kcal</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-cinza">
+          <div class="dash-card-icon">🏃</div>
+          <div>
+            <div class="dash-card-label">Atividade</div>
+            <div class="dash-card-value" style="font-size:1rem"><span id="dash-atividade">—</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-vermelho">
+          <div class="dash-card-icon">🎯</div>
+          <div>
+            <div class="dash-card-label">Objetivo</div>
+            <div class="dash-card-value" style="font-size:1rem"><span id="dash-objetivo">—</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-azul">
+          <div class="dash-card-icon">🔬</div>
+          <div>
+            <div class="dash-card-label">Total Exames</div>
+            <div class="dash-card-value"><span id="dash-total-exames">—</span></div>
+          </div>
+        </div>
+        <div class="dash-card dash-card-vermelho">
+          <div class="dash-card-icon">⚠️</div>
+          <div>
+            <div class="dash-card-label">Exames c/ Alerta</div>
+            <div class="dash-card-value"><span id="dash-exames-alerta">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos de evolução -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.2rem;margin-top:1.2rem">
+
+        <!-- Peso -->
+        <div class="card">
+          <div class="card-header">⚖️ Evolução do Peso</div>
+          <div class="card-body">
+            <canvas id="grafico-peso" height="180"></canvas>
+            <div id="historico-peso-lista" style="margin-top:1rem"></div>
+          </div>
+        </div>
+
+        <!-- IMC -->
+        <div class="card">
+          <div class="card-header">📐 Evolução do IMC</div>
+          <div class="card-body">
+            <canvas id="grafico-imc" height="180"></canvas>
+            <div style="margin-top:.6rem;font-size:.78rem;color:#888">
+              ✅ Normal: 18,5–24,9 &nbsp;|&nbsp; ⚠️ Sobrepeso: 25–29,9 &nbsp;|&nbsp; 🔴 Obesidade: ≥30
+            </div>
+          </div>
+        </div>
+
+        <!-- Cintura -->
+        <div class="card">
+          <div class="card-header">📏 Evolução da Cintura</div>
+          <div class="card-body">
+            <canvas id="grafico-cintura" height="180"></canvas>
+            <div style="margin-top:.6rem;font-size:.78rem;color:#888">
+              ✅ Referência: &lt;94 cm (♂) / &lt;80 cm (♀)
+            </div>
+          </div>
+        </div>
+
+        <!-- Exame -->
+        <div class="card">
+          <div class="card-header">🔬 Evolução de Exame</div>
+          <div class="card-body">
+            <select id="select-exame-grafico" onchange="renderGraficoExame()"
+              style="width:100%;margin-bottom:.8rem;padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:.85rem">
+              <option value="">Selecione um exame...</option>
+            </select>
+            <canvas id="grafico-exame" height="180"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Exames com alerta -->
+      <div class="card" style="margin-top:1.2rem">
+        <div class="card-header">⚠️ Exames com Alerta</div>
+        <div class="card-body">
+          <div id="dash-exames-alerta-lista">
+            <p class="campo-hint">Nenhum alerta registrado.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela histórico completo -->
+      <div class="card" style="margin-top:1.2rem">
+        <div class="card-header">📋 Histórico de Registros</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+            <thead>
+              <tr style="background:#f5f5f5;text-align:left">
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">Data</th>
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">Peso</th>
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">IMC</th>
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">Cintura</th>
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">Atividade</th>
+                <th style="padding:8px 12px;font-weight:600;color:#555;border-bottom:2px solid #eee">Objetivo</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-evolucao-body">
+              <tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Nenhum registro ainda.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:1rem">
+        <button class="btn btn-primary" onclick="abrirModalPeso()">➕ Registrar Peso</button>
+        <button class="btn btn-outline" onclick="irParaAba('medicamentos')">👤 Ir para Perfil</button>
+        <button class="btn btn-outline" onclick="irParaAba('exames')">🔬 Ir para Exames</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>NutriSaúde &copy; 2025 — Ferramenta de apoio à gestão nutricional. Não substitui consulta médica profissional.</p>
+  </footer>
+
+  <!-- Modal de confirmação de receita -->
+  <div id="receita-modal" class="modal-overlay" style="display:none" onclick="fecharModalReceita(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🗒️ Prévia — Medicamentos da Receita</h3>
+        <button class="modal-close" onclick="fecharModalReceitaBtn()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-info" id="receita-modal-fonte"></p>
+        <div id="receita-modal-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <span id="receita-modal-resumo" class="modal-resumo"></span>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="confirmarImportacaoReceita()">✅ Importar Selecionados</button>
+          <button class="btn btn-outline" onclick="fecharModalReceitaBtn()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmação de importação -->
+  <div id="import-modal" class="modal-overlay" style="display:none" onclick="fecharModal(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📋 Prévia — Exames Detectados</h3>
+        <button class="modal-close" onclick="fecharModalBtn()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-info" id="modal-fonte"></p>
+        <div id="modal-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <span id="modal-resumo" class="modal-resumo"></span>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="confirmarImportacao()">✅ Importar Selecionados</button>
+          <button class="btn btn-outline" onclick="fecharModalBtn()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Peso -->
+  <div id="modal-peso" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-header">
+        <h3>⚖️ Registrar Peso</h3>
+        <button class="modal-close" onclick="document.getElementById('modal-peso').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
+        <div class="form-group">
+          <label>Data do registro</label>
+          <input type="date" id="peso-data-input" style="width:100%" />
+        </div>
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" id="peso-input" placeholder="Ex: 82.5" step="0.1" min="20" max="300" style="width:100%" />
+        </div>
+        <div class="form-group">
+          <label>Observação (opcional)</label>
+          <input type="text" id="peso-obs-input" placeholder="Ex: após consulta" style="width:100%" />
+        </div>
+        <div id="peso-status"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="salvarPeso()">💾 Salvar</button>
+        <button class="btn btn-outline" onclick="document.getElementById('modal-peso').style.display='none'">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
