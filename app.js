@@ -872,6 +872,13 @@ function carregarPerfil() {
   if (perfil.nascimento) document.getElementById('paciente-nascimento').value = perfil.nascimento;
   if (perfil.medico)     document.getElementById('paciente-medico').value     = perfil.medico;
   if (perfil.crm)        document.getElementById('paciente-crm').value        = perfil.crm;
+  if (perfil.peso)       { const el = document.getElementById('paciente-peso');    if (el) el.value = perfil.peso; }
+  if (perfil.altura)     { const el = document.getElementById('paciente-altura');  if (el) el.value = perfil.altura; }
+  if (perfil.sexo)       { const el = document.getElementById('paciente-sexo');    if (el) el.value = perfil.sexo; }
+  if (perfil.cintura)    { const el = document.getElementById('paciente-cintura'); if (el) el.value = perfil.cintura; }
+  if (perfil.atividade)  { const el = document.getElementById('paciente-atividade'); if (el) el.value = perfil.atividade; }
+  if (perfil.objetivo)   { const el = document.getElementById('paciente-objetivo');  if (el) el.value = perfil.objetivo; }
+  calcularIMC();
   if (perfil.glp1Ativo) {
     document.getElementById('glp1-ativo').checked = true;
     document.getElementById('glp1-detalhe').style.display = 'block';
@@ -1593,6 +1600,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const exData    = document.getElementById('exame-data');
   if (medInicio) medInicio.value = hoje;
   if (exData)    exData.value    = hoje;
+
+  // Cálculo automático do IMC ao digitar peso ou altura
+  ['paciente-peso', 'paciente-altura'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', calcularIMC);
+  });
 });
 
 /* ══════════════════════════════════════════════════
@@ -3008,20 +3021,28 @@ function getDadosBio() {
 /* ── Calcular IMC e exibir no card ───────────────────────────── */
 function calcularIMC() {
   const { peso, altura } = getDadosBio();
-  const el = document.getElementById('imc-display');
-  if (!el) return;
-  if (!peso || !altura) { el.style.display = 'none'; return; }
+  const inputEl  = document.getElementById('imc-resultado');
+  const labelEl  = document.getElementById('imc-valor');
+
+  if (!peso || !altura) {
+    if (inputEl) inputEl.value = '';
+    if (labelEl) labelEl.textContent = '';
+    return;
+  }
+
   const altM = altura / 100;
   const imc  = peso / (altM * altM);
   let classe = '', cor = '';
-  if      (imc < 18.5)              { classe = 'Abaixo do peso';      cor = '#1976d2'; }
-  else if (imc < 25)                { classe = 'Peso normal ✅';       cor = '#43a047'; }
-  else if (imc < 30)                { classe = 'Sobrepeso ⚠️';         cor = '#fb8c00'; }
-  else if (imc < 35)                { classe = 'Obesidade Grau I 🔴';  cor = '#e53935'; }
-  else if (imc < 40)                { classe = 'Obesidade Grau II 🔴'; cor = '#b71c1c'; }
-  else                              { classe = 'Obesidade Grau III 🔴';cor = '#7f0000'; }
-  el.style.display = 'block';
-  el.innerHTML = '<span style="color:#555;font-size:0.85rem">IMC: </span><span class="imc-valor" style="color:' + cor + '">' + imc.toFixed(1) + '</span><span style="color:#888;font-size:0.82rem;margin-left:0.5rem">kg/m² — ' + classe + '</span>';
+  if      (imc < 18.5) { classe = 'Abaixo do peso';       cor = '#1976d2'; }
+  else if (imc < 25)   { classe = 'Peso normal';           cor = '#43a047'; }
+  else if (imc < 30)   { classe = 'Sobrepeso';             cor = '#fb8c00'; }
+  else if (imc < 35)   { classe = 'Obesidade Grau I';      cor = '#e53935'; }
+  else if (imc < 40)   { classe = 'Obesidade Grau II';     cor = '#b71c1c'; }
+  else                 { classe = 'Obesidade Grau III';     cor = '#7f0000'; }
+
+  if (inputEl) inputEl.value = imc.toFixed(1) + ' kg/m²';
+  if (labelEl) { labelEl.textContent = classe; labelEl.style.color = cor; }
+
   atualizarDashboard();
 }
 
