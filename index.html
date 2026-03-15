@@ -37,6 +37,9 @@
         <button class="tab-btn" data-tab="suplementacao">💊 Suplementação</button>
         <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
       </nav>
+      <button id="btn-view-toggle" class="btn-view-toggle" onclick="toggleModoView()" title="Alternar modo de visualização">
+        📋 Ver tudo
+      </button>
       <div class="header-user">
         <span id="user-email-display" class="user-email"></span>
         <button class="btn-logout" id="btn-logout" onclick="authLogout()" title="Sair da conta">⎋ Sair</button>
@@ -185,7 +188,7 @@
             </div>
 
             <!-- Alerta de suplementação vitamínica -->
-            <div class="glp1-alerta" id="glp1-alerta-box">
+            <div class="glp1-alerta detalhe" id="glp1-alerta-box">
               <div class="glp1-alerta-header">
                 <span class="glp1-alerta-icone">⚠️</span>
                 <strong>Atenção: Monitoramento Vitamínico Recomendado</strong>
@@ -216,7 +219,7 @@
       </div>
 
       <!-- Upload de receita -->
-      <div class="card">
+      <div class="card detalhe">
         <div class="card-header">📋 Importar Receita Médica <span class="badge-formatos">CSV · XLSX · XLS · PDF</span></div>
         <div class="card-body">
           <div class="upload-area" id="upload-area-receita">
@@ -300,7 +303,7 @@
       </div>
 
       <!-- Upload de arquivo -->
-      <div class="card">
+      <div class="card detalhe">
         <div class="card-header">📂 Importar Exames por Arquivo <span class="badge-formatos">CSV · XLSX · XLS · PDF</span></div>
         <div class="card-body">
           <div class="upload-area" id="upload-area">
@@ -426,7 +429,7 @@
       </div>
 
       <!-- Painel de referências -->
-      <div class="card">
+      <div class="card detalhe">
         <div class="card-header">📖 Tabela de Valores de Referência</div>
         <div class="card-body">
           <div class="ref-table-wrapper">
@@ -550,7 +553,7 @@
       </div>
 
       <!-- Adicionar refeição ao plano -->
-      <div class="card" id="plano-add-card">
+      <div class="card detalhe" id="plano-add-card">
         <div class="card-header">➕ Adicionar Refeição ao Plano</div>
         <div class="card-body">
           <div class="form-grid">
@@ -676,7 +679,7 @@
       </div>
 
       <!-- Legenda -->
-      <div class="card suple-legenda-card">
+      <div class="card suple-legenda-card detalhe">
         <div class="card-header">📖 Como interpretar esta análise</div>
         <div class="card-body suple-legenda-body">
           <div class="suple-legenda-item"><span class="badge-suple critico">DEFICIENTE</span> Valor abaixo do mínimo recomendado — suplementação indicada</div>
@@ -807,7 +810,7 @@
         </div>
 
         <!-- Cintura -->
-        <div class="card">
+        <div class="card detalhe">
           <div class="card-header">📏 Evolução da Cintura</div>
           <div class="card-body">
             <canvas id="grafico-cintura" height="180"></canvas>
@@ -818,7 +821,7 @@
         </div>
 
         <!-- Exame -->
-        <div class="card">
+        <div class="card detalhe">
           <div class="card-header">🔬 Evolução de Exame</div>
           <div class="card-body">
             <select id="select-exame-grafico" onchange="renderGraficoExame()"
@@ -832,7 +835,7 @@
       </div>
 
       <!-- Exames com alerta -->
-      <div class="card" style="margin-top:1.2rem">
+      <div class="card detalhe" style="margin-top:1.2rem">
         <div class="card-header">⚠️ Exames com Alerta</div>
         <div class="card-body">
           <div id="dash-exames-alerta-lista">
@@ -842,7 +845,7 @@
       </div>
 
       <!-- Tabela histórico completo -->
-      <div class="card" style="margin-top:1.2rem">
+      <div class="card detalhe" style="margin-top:1.2rem">
         <div class="card-header">📋 Histórico de Registros</div>
         <div class="card-body" style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:.88rem">

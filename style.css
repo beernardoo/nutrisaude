@@ -1259,6 +1259,32 @@ textarea { resize: vertical; }
 }
 .btn-logout:hover { background: rgba(255,255,255,.22); }
 
+/* ── Toggle Modo Resumido / Completo ─────────────────────────────── */
+.btn-view-toggle {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.25);
+  color: rgba(255,255,255,.9);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: .8rem;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-view-toggle:hover { background: rgba(255,255,255,.22); }
+.btn-view-toggle.ativo {
+  background: rgba(255,255,255,.92);
+  color: var(--primary);
+  font-weight: 700;
+  border-color: rgba(255,255,255,.7);
+}
+
+/* Oculta elementos marcados como "detalhe" no modo resumido */
+body.modo-resumido .detalhe { display: none !important; }
+
 /* ── Toast de migração ─────────────────────────────────────────────── */
 .migration-toast {
   position: fixed;

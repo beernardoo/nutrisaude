@@ -1777,7 +1777,32 @@ function init() {
 
 // init() é chamado automaticamente por carregarDados() (db.js) após autenticação.
 // Chamamos aqui apenas para popular selects e datas sem depender de auth.
+/* ══════════════════════════════════════════════════
+   MODO DE VISUALIZAÇÃO — Resumido / Completo
+══════════════════════════════════════════════════ */
+let modoView = localStorage.getItem('ns_modo_view') || 'resumido';
+
+function toggleModoView() {
+  modoView = modoView === 'resumido' ? 'completo' : 'resumido';
+  localStorage.setItem('ns_modo_view', modoView);
+  aplicarModoView();
+}
+
+function aplicarModoView() {
+  const btn = document.getElementById('btn-view-toggle');
+  if (modoView === 'resumido') {
+    document.body.classList.add('modo-resumido');
+    document.body.classList.remove('modo-completo');
+    if (btn) { btn.innerHTML = '📋 Ver tudo'; btn.classList.remove('ativo'); }
+  } else {
+    document.body.classList.remove('modo-resumido');
+    document.body.classList.add('modo-completo');
+    if (btn) { btn.innerHTML = '✂️ Resumido'; btn.classList.add('ativo'); }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  aplicarModoView(); // aplica o modo salvo antes de qualquer render
   renderAlimentos();
   popularSelectAlimentos();
   calcularMetas();
