@@ -226,6 +226,30 @@ const ALIMENTOS = [
   { nome:'Requeijão light',        emoji:'🧈', cat:'laticinio',   kcal:140, carb:4.0,  prot:9.0, gord:9.0 },
 ];
 
+/* ── Unidades inteligentes por alimento ─────────── */
+const FOOD_UNITS = {
+  'Ovo cozido/mexido':         { u:'unid.',  p:50  },
+  'Pão integral':              { u:'fatia',  p:25  },
+  'Banana':                    { u:'unid.',  p:100 },
+  'Maçã':                      { u:'unid.',  p:120 },
+  'Laranja':                   { u:'unid.',  p:130 },
+  'Kiwi':                      { u:'unid.',  p:80  },
+  'Morango':                   { u:'unid.',  p:15  },
+  'Mamão (formosa)':           { u:'fatia',  p:130 },
+  'Abacaxi':                   { u:'fatia',  p:100 },
+  'Melancia':                  { u:'fatia',  p:200 },
+  'Uva':                       { u:'cacho',  p:100 },
+  'Leite integral':            { u:'ml',     p:1   },
+  'Leite desnatado':           { u:'ml',     p:1   },
+  'Azeite de oliva':           { u:'ml',     p:1   },
+  'Óleo de coco':              { u:'ml',     p:1   },
+  'Queijo mussarela':          { u:'fatia',  p:20  },
+  'Cream cheese / Requeijão':  { u:'col.',   p:15  },
+  'Requeijão light':           { u:'col.',   p:15  },
+};
+function _getUnit(nome) { return FOOD_UNITS[nome] || { u:'g', p:1 }; }
+function _sanitizeId(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,'_'); }
+
 /* ── ESTADO DA APLICAÇÃO ────────────────────────── */
 // Arrays/objetos mutáveis — populados por db.js (carregarDados()) após login
 let medicamentos   = [];
@@ -608,49 +632,156 @@ function removerItemPlano(dia, ref, id, tipo) {
 const DIAS_ORDEM = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
 const REFEICAO_ORDEM = ['Café da manhã','Lanche da manhã','Almoço','Lanche da tarde','Jantar','Ceia'];
 
+/* ── Funções de interação inline por refeição ────── */
+function toggleAddForm(formId) {
+  const el = document.getElementById(formId);
+  if (!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'flex';
+  if (!visible) el.querySelector('select')?.focus();
+}
+
+function onFoodSelChange(formId) {
+  const idx    = document.getElementById('fsel_' + formId)?.value;
+  const qty    = parseFloat(document.getElementById('fqty_' + formId)?.value) || 0;
+  const unitEl = document.getElementById('funit_' + formId);
+  const kcalEl = document.getElementById('fkcal_' + formId);
+  if (!idx || idx === '') { if (kcalEl) kcalEl.textContent = '— kcal'; return; }
+  const a = ALIMENTOS[parseInt(idx)];
+  const { u } = _getUnit(a.nome);
+  if (unitEl) unitEl.textContent = u;
+  if (kcalEl) kcalEl.textContent = qty > 0 ? (a.kcal * qty / 100).toFixed(0) + ' kcal' : '— kcal';
+}
+
+function onFoodQtyChange(formId) {
+  const idx    = document.getElementById('fsel_' + formId)?.value;
+  const qty    = parseFloat(document.getElementById('fqty_' + formId)?.value) || 0;
+  const kcalEl = document.getElementById('fkcal_' + formId);
+  if (!idx || !kcalEl) return;
+  const a = ALIMENTOS[parseInt(idx)];
+  const { u, p } = _getUnit(a.nome);
+  const qtdG = (u === 'g' || u === 'ml') ? qty : qty * p;
+  kcalEl.textContent = qty > 0 ? (a.kcal * qtdG / 100).toFixed(0) + ' kcal' : '— kcal';
+}
+
+function confirmarAddAlimentoInline(dia, ref, tipo, formId) {
+  const idx  = document.getElementById('fsel_' + formId)?.value;
+  const qty  = parseFloat(document.getElementById('fqty_' + formId)?.value);
+  if (!idx || idx === '' || isNaN(qty) || qty <= 0) return;
+  const alimento = ALIMENTOS[parseInt(idx)];
+  const { u, p } = _getUnit(alimento.nome);
+  const qtdG  = (u === 'g' || u === 'ml') ? qty : qty * p;
+  const fator = qtdG / 100;
+  const item  = {
+    id: Date.now(), nome: alimento.nome, emoji: alimento.emoji, qtd: qtdG,
+    kcal: +(alimento.kcal * fator).toFixed(1), carb: +(alimento.carb * fator).toFixed(1),
+    prot: +(alimento.prot * fator).toFixed(1), gord: +(alimento.gord * fator).toFixed(1),
+  };
+  if (tipo === 'medico') {
+    if (!planoMedico[dia])      planoMedico[dia] = {};
+    if (!planoMedico[dia][ref]) planoMedico[dia][ref] = [];
+    planoMedico[dia][ref].push(item);
+    localStorage.setItem('ns_plano_medico', JSON.stringify(planoMedico));
+  } else {
+    if (!plano[dia])      plano[dia] = {};
+    if (!plano[dia][ref]) plano[dia][ref] = [];
+    plano[dia][ref].push(item);
+    dbSalvarPlano(plano);
+  }
+  renderPlano(); atualizarResumoDiario();
+}
+
+function atualizarQtdPlano(dia, ref, id, tipo, novaQtdStr) {
+  const novaQtd = parseFloat(novaQtdStr);
+  if (isNaN(novaQtd) || novaQtd <= 0) return;
+  const alvo = tipo === 'medico' ? planoMedico : plano;
+  if (!alvo[dia]?.[ref]) return;
+  const idx = alvo[dia][ref].findIndex(i => i.id === id);
+  if (idx === -1) return;
+  const alimento = ALIMENTOS.find(a => a.nome === alvo[dia][ref][idx].nome);
+  if (!alimento) return;
+  const fator = novaQtd / 100;
+  alvo[dia][ref][idx] = { ...alvo[dia][ref][idx], qtd: novaQtd,
+    kcal: +(alimento.kcal * fator).toFixed(1), carb: +(alimento.carb * fator).toFixed(1),
+    prot: +(alimento.prot * fator).toFixed(1), gord: +(alimento.gord * fator).toFixed(1),
+  };
+  if (tipo === 'medico') localStorage.setItem('ns_plano_medico', JSON.stringify(planoMedico));
+  else dbSalvarPlano(alvo);
+  renderPlano(); atualizarResumoDiario();
+}
+
+const EMOJI_REF = { 'Café da manhã':'☀️','Lanche da manhã':'🍎','Almoço':'🍽️','Lanche da tarde':'🥗','Jantar':'🌙','Ceia':'🌛' };
+
 function _renderDiaCard(dia, diaData, tipo) {
-  const refs = REFEICAO_ORDEM.filter(r => diaData[r]);
   let totalKcal = 0, totalCarb = 0, totalProt = 0, totalGord = 0;
   const badge = tipo === 'medico'
-    ? '<span style="font-size:.7rem;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:10px;font-weight:600">👨‍⚕️ Prescrito</span>'
-    : '<span style="font-size:.7rem;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:10px;font-weight:600">👤 Pessoal</span>';
-  const refeicoes = refs.map(ref => {
-    const itens = diaData[ref];
-    let refKcal = 0;
-    const itensHtml = itens.map(item => {
-      totalKcal += item.kcal; totalCarb += item.carb;
-      totalProt += item.prot; totalGord += item.gord;
-      refKcal   += item.kcal;
-      const imgUrl = FOOD_IMAGES && FOOD_IMAGES[item.nome];
-      const imgHtml = imgUrl
-        ? `<img src="${imgUrl}" alt="${esc(item.nome)}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">`
-        : `<span style="font-size:1.3rem;line-height:1">${item.emoji}</span>`;
-      return `<div class="plano-item">
-        <span style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-          ${imgHtml}
-          <span class="plano-item-nome">${esc(item.nome)} <small style="color:#94a3b8">(${item.qtd}g)</small></span>
-        </span>
-        <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          <span class="plano-item-kcal">${item.kcal.toFixed(0)} kcal</span>
-          <button class="btn btn-danger btn-sm" onclick="removerItemPlano('${dia}','${esc(ref)}',${item.id},'${tipo}')">✕</button>
-        </span>
+    ? '<span class="plano-badge medico">👨‍⚕️ Prescrito</span>'
+    : '<span class="plano-badge paciente">👤 Pessoal</span>';
+
+  const refeicoes = REFEICAO_ORDEM.map(ref => {
+    const itens  = diaData[ref] || [];
+    let refKcal  = 0;
+    const formId = _sanitizeId(`f_${tipo}_${dia}_${ref}`);
+
+    const chips = itens.map(item => {
+      refKcal += item.kcal; totalKcal += item.kcal;
+      totalCarb += item.carb; totalProt += item.prot; totalGord += item.gord;
+      const imgUrl = typeof FOOD_IMAGES !== 'undefined' && FOOD_IMAGES[item.nome];
+      const media  = imgUrl
+        ? `<img src="${imgUrl}" class="food-chip-img" onerror="this.style.display='none'">`
+        : `<span class="food-chip-emoji">${item.emoji}</span>`;
+      const { u } = _getUnit(item.nome);
+      const unitLabel = (u === 'g' || u === 'ml') ? u : 'g';
+      return `<div class="food-chip">
+        ${media}
+        <div class="food-chip-body">
+          <span class="food-chip-nome">${esc(item.nome)}</span>
+          <div class="food-chip-meta">
+            <input type="number" class="food-chip-qty-input" value="${item.qtd}" min="1"
+              onchange="atualizarQtdPlano('${dia}','${esc(ref)}',${item.id},'${tipo}',this.value)"
+              title="Quantidade em gramas">
+            <span class="food-chip-unit">${unitLabel}</span>
+            <span class="food-chip-kcal">${item.kcal.toFixed(0)} kcal</span>
+          </div>
+        </div>
+        <button class="food-chip-del" onclick="removerItemPlano('${dia}','${esc(ref)}',${item.id},'${tipo}')" title="Remover">×</button>
       </div>`;
     }).join('');
+
+    const optsAlimentos = ALIMENTOS.map((a,i) => `<option value="${i}">${a.nome}</option>`).join('');
+
     return `<div class="plano-refeicao-grupo">
       <div class="plano-refeicao-titulo">
-        <span>${ref}</span>
-        <span class="plano-ref-kcal-total">${refKcal.toFixed(0)} kcal</span>
+        <span>${EMOJI_REF[ref] || ''} ${ref}</span>
+        ${refKcal > 0 ? `<span class="plano-ref-kcal-total">${refKcal.toFixed(0)} kcal</span>` : ''}
       </div>
-      ${itensHtml}
+      <div class="food-chips-area">
+        ${chips}
+        <button class="food-chip-add-btn" onclick="toggleAddForm('${formId}')">+ Adicionar</button>
+      </div>
+      <div id="${formId}" class="meal-inline-form" style="display:none">
+        <select id="fsel_${formId}" onchange="onFoodSelChange('${formId}')">
+          <option value="">Alimento...</option>${optsAlimentos}
+        </select>
+        <input type="number" id="fqty_${formId}" value="100" min="1" class="meal-form-qty"
+          oninput="onFoodQtyChange('${formId}')">
+        <span id="funit_${formId}" class="meal-form-unit">g</span>
+        <span id="fkcal_${formId}" class="meal-form-kcal">— kcal</span>
+        <button class="btn btn-primary btn-sm" style="padding:4px 10px"
+          onclick="confirmarAddAlimentoInline('${dia}','${esc(ref)}','${tipo}','${formId}')">✓</button>
+        <button class="btn btn-sm" style="padding:4px 10px"
+          onclick="toggleAddForm('${formId}')">✕</button>
+      </div>
     </div>`;
   }).join('');
+
   return `<div class="plano-dia-card">
-    <div class="plano-dia-header" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="plano-dia-header">
       <span>📅 ${dia}</span>${badge}
     </div>
     <div class="plano-dia-body">
       ${refeicoes}
-      <div class="plano-total">
+      ${totalKcal > 0 ? `<div class="plano-total">
         <span>Total do dia</span>
         <div style="text-align:right">
           <span class="plano-total-kcal">${totalKcal.toFixed(0)} kcal</span>
@@ -658,7 +789,7 @@ function _renderDiaCard(dia, diaData, tipo) {
             Carb: ${totalCarb.toFixed(1)}g &nbsp; Prot: ${totalProt.toFixed(1)}g &nbsp; Gord: ${totalGord.toFixed(1)}g
           </div>
         </div>
-      </div>
+      </div>` : ''}
     </div>
   </div>`;
 }
