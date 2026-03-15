@@ -64,6 +64,15 @@ async function carregarDados() {
         nascimento:  p.nascimento  || '',
         medico:      p.medico      || '',
         crm:         p.crm         || '',
+        // Dados biométricos
+        sexo:        p.sexo        || '',
+        peso:        p.peso        || null,
+        altura:      p.altura      || null,
+        cintura:     p.cintura     || null,
+        atividade:   p.atividade   || '',
+        objetivo:    p.objetivo    || '',
+        imc:         p.imc         || null,
+        // GLP-1
         glp1Ativo:   p.glp1_ativo  || false,
         glp1Tipo:    p.glp1_tipo   || '',
         glp1Dose:    p.glp1_dose   || '',
@@ -99,12 +108,29 @@ async function carregarDados() {
 async function dbSalvarPerfil(obj) {
   const uid = await dbUserId();
   if (!uid) return;
+
+  // Calcula e salva IMC se peso e altura disponíveis
+  let imcVal = null;
+  if (obj.peso && obj.altura) {
+    const altM = obj.altura / 100;
+    imcVal = parseFloat((obj.peso / (altM * altM)).toFixed(1));
+  }
+
   const { error } = await _supabase.from('perfil').upsert({
     id:          uid,
     nome:        obj.nome        || null,
     nascimento:  obj.nascimento  || null,
     medico:      obj.medico      || null,
     crm:         obj.crm         || null,
+    // Dados biométricos
+    sexo:        obj.sexo        || null,
+    peso:        obj.peso        || null,
+    altura:      obj.altura      || null,
+    cintura:     obj.cintura     || null,
+    atividade:   obj.atividade   || null,
+    objetivo:    obj.objetivo    || null,
+    imc:         imcVal,
+    // GLP-1
     glp1_ativo:  obj.glp1Ativo   || false,
     glp1_tipo:   obj.glp1Tipo    || null,
     glp1_dose:   obj.glp1Dose    || null,
