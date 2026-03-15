@@ -777,7 +777,24 @@ textarea { resize: vertical; }
   .header { padding: 0 8px; }
   .logo-icon { font-size: 1.8rem; }
   .logo h1 { font-size: 1.1rem; }
-  .tab-btn { padding: 6px 10px; font-size: .74rem; }
+
+  /* Nav: 2 linhas de 3 tabs — todas visíveis sem scroll */
+  .nav-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 4px;
+  }
+  .tab-btn {
+    flex: 1 0 calc(33.333% - 4px);
+    min-width: 0;
+    padding: 7px 4px;
+    font-size: .68rem;
+    text-align: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   /* Formulários — 1 coluna */
   .form-row-info { grid-template-columns: repeat(2, 1fr); gap: 6px; }
