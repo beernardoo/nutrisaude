@@ -744,6 +744,8 @@ textarea { resize: vertical; }
   /* GLP-1 */
   .glp1-vitaminas-grid { grid-template-columns: repeat(2, 1fr); }
   #glp1-detalhe .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .glp1-alerta { overflow: hidden; max-width: 100%; }
+  .glp1-vit-card { min-width: 0; }
 
   /* Alimentos */
   .food-grid { grid-template-columns: repeat(3, 1fr); }
@@ -807,9 +809,15 @@ textarea { resize: vertical; }
   /* Dashboard — 2 colunas */
   .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; }
 
-  /* GLP-1 */
-  .glp1-vitaminas-grid { grid-template-columns: 1fr; }
-  #glp1-detalhe .form-grid { grid-template-columns: 1fr; }
+  /* GLP-1 — força 1 coluna em telas pequenas */
+  .glp1-vitaminas-grid          { grid-template-columns: 1fr !important; }
+  #glp1-detalhe .form-grid      { grid-template-columns: 1fr !important; }
+  .glp1-alerta                  { padding: 14px 12px; }
+  .glp1-vit-card                { min-width: 0; width: 100%; }
+  .glp1-vit-header              { flex-wrap: wrap; gap: 4px; }
+  .glp1-vit-badge               { font-size: .68rem; }
+  .toggle-label                 { align-items: flex-start; gap: 10px; }
+  .toggle-label span:last-child { font-size: .85rem; }
 
   /* Alimentos */
   .food-grid { grid-template-columns: repeat(2, 1fr); }
@@ -895,10 +903,17 @@ textarea { resize: vertical; }
 /* Toggle switch */
 .glp1-check-row { margin: 6px 0 4px; }
 .toggle-label {
-  display: inline-flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 12px;
   cursor: pointer; font-size: .9rem; color: var(--text);
+  text-transform: none;   /* evita herdar uppercase do <label> */
 }
 .toggle-label input[type=checkbox] { display: none; }
+.toggle-label span:last-child {
+  text-transform: none;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
 .toggle-slider {
   width: 44px; height: 24px; background: #cbd5e1; border-radius: 12px;
   position: relative; transition: background .25s; flex-shrink: 0;
