@@ -809,8 +809,8 @@ textarea { resize: vertical; }
   /* Dashboard — 2 colunas */
   .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; }
 
-  /* GLP-1 — força 1 coluna em telas pequenas */
-  .glp1-vitaminas-grid          { grid-template-columns: 1fr !important; }
+  /* GLP-1 — 2 colunas para vitaminas, 1 coluna para o formulário */
+  .glp1-vitaminas-grid          { grid-template-columns: repeat(2, 1fr) !important; }
   #glp1-detalhe .form-grid      { grid-template-columns: 1fr !important; }
   .glp1-alerta                  { padding: 14px 12px; }
   .glp1-vit-card                { min-width: 0; width: 100%; }
