@@ -394,6 +394,11 @@ textarea { resize: vertical; }
   color: #fff;
   padding: 10px 16px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .plano-dia-body { padding: 12px 16px; }
 .plano-refeicao-grupo { margin-bottom: 12px; }
@@ -558,9 +563,7 @@ textarea { resize: vertical; }
   border-radius: 10px;
 }
 
-@media (max-width: 700px) {
-  .resumo-kcal-grid { grid-template-columns: repeat(2, 1fr); }
-}
+/* resumo-kcal-grid responsivo: coberto no bloco @media 768px acima */
 
 /* ===== EMPTY STATE ===== */
 .empty-state {
@@ -687,22 +690,158 @@ textarea { resize: vertical; }
 .match-tag.err { background: #fef3c7; color: #92400e; }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 960px) {
-  .exames-grid { grid-template-columns: repeat(2, 1fr); }
-  .glp1-vitaminas-grid { grid-template-columns: repeat(2, 1fr); }
-  #glp1-detalhe .form-grid { grid-template-columns: repeat(2, 1fr); }
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .form-row-bio  { grid-template-columns: repeat(4, 1fr); }
   .dashboard-grid { grid-template-columns: repeat(4, 1fr) !important; }
-}
-@media (max-width: 700px) {
-  .header-inner { flex-direction: column; align-items: flex-start; }
-  .form-grid { grid-template-columns: 1fr; }
-  .macro-bars { grid-template-columns: 1fr; }
-  .plano-semanal { grid-template-columns: 1fr; }
-  .food-grid { grid-template-columns: repeat(2, 1fr); }
-  .exames-grid { grid-template-columns: repeat(2, 1fr); }
   .glp1-vitaminas-grid { grid-template-columns: repeat(2, 1fr); }
   #glp1-detalhe .form-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Tablet pequeno / mobile grande (≤ 768px) ── */
+@media (max-width: 768px) {
+  body { font-size: 14px; }
+
+  .main-content { padding: 0 12px; margin: 16px auto; }
+
+  /* Header: empilha logo + nav */
+  .header { padding: 0 12px; }
+  .header-inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0; }
+  .logo h1 { font-size: 1.25rem; }
+  .logo p  { display: none; }
+
+  /* Nav: scroll horizontal */
+  .nav-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 7px 12px; font-size: .78rem; flex-shrink: 0; }
+
+  /* Header user visível mas compacto */
+  .header-user { margin-left: 0; }
+  .user-email   { max-width: 140px; font-size: .72rem; }
+
+  /* Cards */
+  .card-body { padding: 14px; }
+  .card-header { padding: 12px 14px; }
+
+  /* Formulários */
+  .form-row-info { grid-template-columns: repeat(2, 1fr); }
+  .form-row-bio  { grid-template-columns: repeat(3, 1fr); }
+  .form-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Exames */
+  .exames-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Dashboard */
   .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* GLP-1 */
+  .glp1-vitaminas-grid { grid-template-columns: repeat(2, 1fr); }
+  #glp1-detalhe .form-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Alimentos */
+  .food-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Plano */
+  .plano-semanal { grid-template-columns: 1fr; }
+  .resumo-kcal-grid { grid-template-columns: repeat(2, 1fr); }
+  .macro-bars { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* Suplementação */
+  .suple-grid { grid-template-columns: 1fr; }
+  .suple-vitaminas-lista { grid-template-columns: 1fr; }
+
+  /* Modal */
+  .modal-box { max-width: 100%; }
+
+  /* Chips */
+  .food-chip { max-width: 100%; flex: 1 1 calc(50% - 8px); }
+  .meal-inline-form { flex-direction: column; align-items: stretch; }
+  .meal-inline-form select { max-width: 100%; }
+  .meal-form-qty { width: 100%; }
+}
+
+/* ── Mobile pequeno (≤ 480px) ── */
+@media (max-width: 480px) {
+  body { font-size: 13px; }
+
+  .main-content { padding: 0 8px; margin: 10px auto; }
+
+  /* Header */
+  .header { padding: 0 8px; }
+  .logo-icon { font-size: 1.8rem; }
+  .logo h1 { font-size: 1.1rem; }
+  .tab-btn { padding: 6px 10px; font-size: .74rem; }
+
+  /* Formulários — 1 coluna */
+  .form-row-info { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .form-row-bio  { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .form-grid { grid-template-columns: 1fr; }
+
+  /* Exames — 1 coluna */
+  .exames-grid { grid-template-columns: 1fr; }
+
+  /* Dashboard — 2 colunas */
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* GLP-1 */
+  .glp1-vitaminas-grid { grid-template-columns: 1fr; }
+  #glp1-detalhe .form-grid { grid-template-columns: 1fr; }
+
+  /* Alimentos */
+  .food-grid { grid-template-columns: repeat(2, 1fr); }
+  .food-img-wrapper { height: 80px; }
+
+  /* Plano */
+  .plano-semanal { grid-template-columns: 1fr; }
+  .resumo-kcal-grid { grid-template-columns: repeat(2, 1fr); }
+  .macro-bars { grid-template-columns: 1fr; }
+  .plano-dia-body { padding: 8px 10px; }
+
+  /* Chips — largura total */
+  .food-chip { max-width: 100%; flex: 1 1 100%; }
+  .food-chips-area { gap: 6px; }
+  .food-chip-add-btn { width: 100%; justify-content: center; }
+
+  /* Cards */
+  .card-body { padding: 10px; }
+
+  /* Buttons */
+  .btn { padding: 9px 16px; font-size: .85rem; }
+  .btn-primary { width: 100%; justify-content: center; }
+
+  /* Med item */
+  .med-item { grid-template-columns: 1fr; }
+
+  /* Suplementação */
+  .suple-grid { grid-template-columns: 1fr; }
+  .suple-resumo-row { gap: 8px; }
+  .suple-stat { min-width: 70px; padding: 8px 10px; }
+  .stat-num { font-size: 1.4rem; }
+
+  /* Seção header */
+  .section-header h2 { font-size: 1.2rem; }
+
+  /* Upload */
+  .upload-area { padding: 20px 12px; }
+  .upload-icon { font-size: 2rem; }
+
+  /* Modal */
+  .modal-footer { flex-direction: column; align-items: stretch; }
+  .modal-footer .btn { width: 100%; justify-content: center; }
+
+  /* Uso med */
+  .uso-med-linha { flex-wrap: wrap; }
+  .uso-inp-dose, .uso-inp-freq { max-width: 100% !important; }
+
+  /* Section paciente */
+  .secao-paciente-titulo { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 
 /* ╔══════════════════════════════════════════════════╗
@@ -912,15 +1051,7 @@ textarea { resize: vertical; }
 .campo-hint { font-size: .8rem; color: var(--muted); margin: 4px 0; }
 .obrigatorio { color: #ef4444; }
 
-@media (max-width: 700px) {
-  .suple-grid { grid-template-columns: 1fr; }
-  .glp1-vitaminas-grid { grid-template-columns: 1fr; }
-  .suple-vitaminas-lista { grid-template-columns: 1fr; }
-  .suple-resumo-row { gap: 10px; }
-  .suple-stat { min-width: 80px; padding: 10px 14px; }
-  .uso-med-linha { flex-wrap: wrap; }
-  .uso-inp-dose, .uso-inp-freq { max-width: 100% !important; }
-}
+/* suple responsivo: coberto no bloco @media 768px acima */
 
 /* ══════════════════════════════════════════════════════════════════════
    AUTH — Overlay de login / cadastro
@@ -1129,6 +1260,8 @@ textarea { resize: vertical; }
 }
 
 @media (max-width: 640px) {
-  .auth-card { padding: 28px 20px 22px; }
-  .header-user { display: none; }
+  .auth-card { padding: 24px 16px 20px; }
+  /* header-user visível no mobile para logout */
+  .header-user { display: flex; }
+  .user-email { display: none; }
 }
