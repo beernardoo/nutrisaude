@@ -428,6 +428,99 @@ textarea { resize: vertical; }
 }
 .plano-total-kcal { color: var(--primary); }
 
+/* ===== PLANO ALIMENTAR — RESUMO CALÓRICO ===== */
+.resumo-kcal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.resumo-kcal-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  border-radius: 10px;
+  text-align: center;
+}
+.resumo-kcal-label { font-size: .78rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+.resumo-kcal-valor { font-size: 1.25rem; font-weight: 700; }
+.resumo-meta      { background: #eff6ff; }
+.resumo-meta .resumo-kcal-valor { color: #2563eb; }
+.resumo-consumido { background: #f0fdf4; }
+.resumo-consumido .resumo-kcal-valor { color: #16a34a; }
+.resumo-restante  { background: #fefce8; }
+.resumo-restante .resumo-kcal-valor  { color: #ca8a04; }
+.resumo-excesso   { background: #fef2f2; }
+.resumo-excesso .resumo-kcal-valor   { color: #dc2626; }
+
+/* Progress bar */
+.plano-progress-track {
+  height: 14px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.plano-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  border-radius: 99px;
+  transition: width .5s ease, background .3s ease;
+}
+.plano-progress-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Troféu */
+.plano-trophy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 99px;
+  animation: trophyBounce .6s ease;
+}
+@keyframes trophyBounce {
+  0%   { transform: scale(0.5); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* Total por refeição */
+.plano-refeicao-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #64748b;
+  padding: 6px 0 4px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 4px;
+}
+.plano-ref-kcal-total {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+@media (max-width: 700px) {
+  .resumo-kcal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ===== EMPTY STATE ===== */
 .empty-state {
   text-align: center;

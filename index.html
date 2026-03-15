@@ -592,6 +592,49 @@
         </div>
       </div>
 
+      <!-- Resumo calórico diário -->
+      <div class="card" id="plano-resumo-card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <span>📊 Resumo Calórico do Dia</span>
+          <select id="resumo-dia-sel" onchange="atualizarResumoDiario()" style="font-size:.85rem;padding:4px 10px;border:1px solid #ddd;border-radius:6px;cursor:pointer">
+            <option value="Segunda">Segunda-feira</option>
+            <option value="Terça">Terça-feira</option>
+            <option value="Quarta">Quarta-feira</option>
+            <option value="Quinta">Quinta-feira</option>
+            <option value="Sexta">Sexta-feira</option>
+            <option value="Sábado">Sábado</option>
+            <option value="Domingo">Domingo</option>
+          </select>
+        </div>
+        <div class="card-body">
+          <div class="resumo-kcal-grid">
+            <div class="resumo-kcal-item resumo-meta">
+              <div class="resumo-kcal-label">🎯 Meta</div>
+              <div class="resumo-kcal-valor" id="resumo-meta-val">— kcal</div>
+            </div>
+            <div class="resumo-kcal-item resumo-consumido">
+              <div class="resumo-kcal-label">🍽️ Consumido</div>
+              <div class="resumo-kcal-valor" id="resumo-cons-val">0 kcal</div>
+            </div>
+            <div class="resumo-kcal-item resumo-restante">
+              <div class="resumo-kcal-label">⬇️ Restante</div>
+              <div class="resumo-kcal-valor" id="resumo-rest-val">— kcal</div>
+            </div>
+            <div class="resumo-kcal-item resumo-excesso" id="resumo-excesso-card" style="display:none">
+              <div class="resumo-kcal-label">⚠️ Excesso</div>
+              <div class="resumo-kcal-valor" id="resumo-exc-val">0 kcal</div>
+            </div>
+          </div>
+          <div class="plano-progress-track">
+            <div id="plano-progress-fill" class="plano-progress-fill"></div>
+          </div>
+          <div class="plano-progress-footer">
+            <span id="plano-progress-pct" style="font-size:.82rem;color:#64748b;font-weight:600">0% da meta</span>
+            <span id="plano-trophy" class="plano-trophy" style="display:none">🏆 Meta atingida!</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Plano semanal -->
       <div id="plano-semanal" class="plano-semanal"></div>
     </section>

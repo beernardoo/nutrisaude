@@ -460,6 +460,44 @@ function selecionarAlimentoPlano(nome) {
 /* ══════════════════════════════════════════════════
    MÓDULO: PLANO ALIMENTAR
 ══════════════════════════════════════════════════ */
+/* ── Calcula total de kcal de um dia em um plano ─── */
+function calcularKcalDia(planoObj, dia) {
+  if (!planoObj || !planoObj[dia]) return 0;
+  let total = 0;
+  Object.values(planoObj[dia]).forEach(itens => itens.forEach(item => { total += item.kcal || 0; }));
+  return total;
+}
+
+/* ── Atualiza resumo calórico diário ───────────── */
+function atualizarResumoDiario() {
+  const diaEl  = document.getElementById('resumo-dia-sel');
+  const dia    = diaEl ? diaEl.value : 'Segunda';
+  const meta   = parseFloat(document.getElementById('meta-kcal')?.value) || 2000;
+  const total  = calcularKcalDia(planoMedico, dia) + calcularKcalDia(plano, dia);
+  const rest   = Math.max(0, meta - total);
+  const exc    = Math.max(0, total - meta);
+  const pct    = Math.min(100, (total / meta) * 100);
+
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  set('resumo-meta-val', meta.toFixed(0) + ' kcal');
+  set('resumo-cons-val', total.toFixed(0) + ' kcal');
+  set('resumo-rest-val', rest.toFixed(0) + ' kcal');
+  set('resumo-exc-val',  exc.toFixed(0)  + ' kcal');
+  set('plano-progress-pct', pct.toFixed(0) + '% da meta');
+
+  const excCard = document.getElementById('resumo-excesso-card');
+  if (excCard) excCard.style.display = exc > 0 ? 'flex' : 'none';
+
+  const fill = document.getElementById('plano-progress-fill');
+  if (fill) {
+    fill.style.width      = pct + '%';
+    fill.style.background = exc > 0 ? '#ef4444' : pct >= 90 ? '#22c55e' : 'var(--primary)';
+  }
+
+  const trophy = document.getElementById('plano-trophy');
+  if (trophy) trophy.style.display = (total > 0 && total >= meta) ? 'inline-flex' : 'none';
+}
+
 function calcularMetas() {
   const kcal     = parseFloat(document.getElementById('meta-kcal').value)     || 2000;
   const carbPct  = parseFloat(document.getElementById('meta-carb-pct').value) || 50;
@@ -487,6 +525,7 @@ function calcularMetas() {
       <div class="macro-bar-track"><div class="macro-bar-fill gord" style="width:${gordPct}%"></div></div>
     </div>
   `;
+  atualizarResumoDiario();
 }
 
 function popularSelectAlimentos() {
@@ -552,6 +591,7 @@ function adicionarAoPlano() {
   }
 
   renderPlano();
+  atualizarResumoDiario();
 }
 
 function removerItemPlano(dia, ref, id, tipo) {
@@ -562,6 +602,7 @@ function removerItemPlano(dia, ref, id, tipo) {
   if (tipo === 'medico') localStorage.setItem('ns_plano_medico', JSON.stringify(planoMedico));
   else dbSalvarPlano(plano);
   renderPlano();
+  atualizarResumoDiario();
 }
 
 const DIAS_ORDEM = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
@@ -575,19 +616,32 @@ function _renderDiaCard(dia, diaData, tipo) {
     : '<span style="font-size:.7rem;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:10px;font-weight:600">👤 Pessoal</span>';
   const refeicoes = refs.map(ref => {
     const itens = diaData[ref];
+    let refKcal = 0;
+    const itensHtml = itens.map(item => {
+      totalKcal += item.kcal; totalCarb += item.carb;
+      totalProt += item.prot; totalGord += item.gord;
+      refKcal   += item.kcal;
+      const imgUrl = FOOD_IMAGES && FOOD_IMAGES[item.nome];
+      const imgHtml = imgUrl
+        ? `<img src="${imgUrl}" alt="${esc(item.nome)}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;flex-shrink:0" onerror="this.style.display='none'">`
+        : `<span style="font-size:1.3rem;line-height:1">${item.emoji}</span>`;
+      return `<div class="plano-item">
+        <span style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+          ${imgHtml}
+          <span class="plano-item-nome">${esc(item.nome)} <small style="color:#94a3b8">(${item.qtd}g)</small></span>
+        </span>
+        <span style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span class="plano-item-kcal">${item.kcal.toFixed(0)} kcal</span>
+          <button class="btn btn-danger btn-sm" onclick="removerItemPlano('${dia}','${esc(ref)}',${item.id},'${tipo}')">✕</button>
+        </span>
+      </div>`;
+    }).join('');
     return `<div class="plano-refeicao-grupo">
-      <div class="plano-refeicao-titulo">${ref}</div>
-      ${itens.map(item => {
-        totalKcal += item.kcal; totalCarb += item.carb;
-        totalProt += item.prot; totalGord += item.gord;
-        return `<div class="plano-item">
-          <span class="plano-item-nome">${item.emoji} ${esc(item.nome)} <small style="color:#94a3b8">(${item.qtd}g)</small></span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span class="plano-item-kcal">${item.kcal} kcal</span>
-            <button class="btn btn-danger btn-sm" onclick="removerItemPlano('${dia}','${esc(ref)}',${item.id},'${tipo}')">✕</button>
-          </span>
-        </div>`;
-      }).join('')}
+      <div class="plano-refeicao-titulo">
+        <span>${ref}</span>
+        <span class="plano-ref-kcal-total">${refKcal.toFixed(0)} kcal</span>
+      </div>
+      ${itensHtml}
     </div>`;
   }).join('');
   return `<div class="plano-dia-card">
@@ -631,6 +685,7 @@ function renderPlano() {
     if (plano[dia])       html += _renderDiaCard(dia, plano[dia], 'paciente');
     return html;
   }).join('');
+  atualizarResumoDiario();
 }
 
 /* ── UTILITÁRIOS ─────────────────────────────────── */
@@ -1606,6 +1661,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', calcularIMC);
   });
+
+  // Pré-seleciona o dia de hoje no resumo calórico
+  const DIAS_PT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const diaHoje = DIAS_PT[new Date().getDay()];
+  const selDia  = document.getElementById('resumo-dia-sel');
+  if (selDia && diaHoje !== 'Domingo') selDia.value = diaHoje;
+  atualizarResumoDiario();
 });
 
 /* ══════════════════════════════════════════════════
