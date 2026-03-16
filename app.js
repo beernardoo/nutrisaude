@@ -684,14 +684,19 @@ function toggleAddForm(formId) {
 
 function onFoodSelChange(formId) {
   const idx    = document.getElementById('fsel_' + formId)?.value;
-  const qty    = parseFloat(document.getElementById('fqty_' + formId)?.value) || 0;
+  const qtyEl  = document.getElementById('fqty_' + formId);
   const unitEl = document.getElementById('funit_' + formId);
   const kcalEl = document.getElementById('fkcal_' + formId);
   if (!idx || idx === '') { if (kcalEl) kcalEl.textContent = '— kcal'; return; }
   const a = ALIMENTOS[parseInt(idx)];
-  const { u } = _getUnit(a.nome);
+  const { u, p } = _getUnit(a.nome);
   if (unitEl) unitEl.textContent = u;
-  if (kcalEl) kcalEl.textContent = qty > 0 ? (a.kcal * qty / 100).toFixed(0) + ' kcal' : '— kcal';
+  // Quantidade padrão inteligente: 100g/ml ou 1 unidade
+  const isGramsOrMl = u === 'g' || u === 'ml';
+  if (qtyEl) { qtyEl.value = isGramsOrMl ? 100 : 1; qtyEl.step = isGramsOrMl ? '10' : '1'; }
+  const qty  = parseFloat(qtyEl?.value) || 0;
+  const qtdG = isGramsOrMl ? qty : qty * p;
+  if (kcalEl) kcalEl.textContent = qty > 0 ? (a.kcal * qtdG / 100).toFixed(0) + ' kcal' : '— kcal';
 }
 
 function onFoodQtyChange(formId) {
@@ -729,6 +734,19 @@ function confirmarAddAlimentoInline(dia, ref, tipo, formId) {
     if (!plano[dia][ref]) plano[dia][ref] = [];
     plano[dia][ref].push(item);
     dbSalvarPlano(plano);
+  }
+  // Fecha form e reseta para próxima adição
+  const formEl = document.getElementById(formId);
+  if (formEl) {
+    const sel = formEl.querySelector('select');
+    const qty = formEl.querySelector('input[type="number"]');
+    if (sel) sel.value = '';
+    if (qty) { qty.value = 100; qty.step = '10'; }
+    const kcalEl = document.getElementById('fkcal_' + formId);
+    const unitEl = document.getElementById('funit_' + formId);
+    if (kcalEl) kcalEl.textContent = '— kcal';
+    if (unitEl) unitEl.textContent = 'g';
+    formEl.style.display = 'none';
   }
   renderPlano(); atualizarResumoDiario();
 }
@@ -843,26 +861,20 @@ function _renderDiaCard(dia, diaData, tipo) {
 
 function renderPlano() {
   const container = document.getElementById('plano-semanal');
-  // Mostrar plano médico (sempre visível)
-  const diasMedico   = DIAS_ORDEM.filter(d => planoMedico[d]);
-  // Mostrar plano paciente (sempre visível)
-  const diasPaciente = DIAS_ORDEM.filter(d => plano[d]);
 
-  if (!diasMedico.length && !diasPaciente.length) {
-    container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Nenhuma refeição adicionada ao plano ainda.</div>';
-    return;
-  }
-
-  // Agrupar por dia, mostrando prescrito + pessoal lado a lado
-  const todosDias = [...new Set([...diasMedico, ...diasPaciente])];
-  const ordenados = DIAS_ORDEM.filter(d => todosDias.includes(d));
-
-  container.innerHTML = ordenados.map(dia => {
+  // Sempre renderiza os 7 dias do modo ATIVO (com ou sem dados)
+  // O outro modo só aparece nos dias em que já tem dados
+  container.innerHTML = DIAS_ORDEM.map(dia => {
     let html = '';
-    if (planoMedico[dia]) html += _renderDiaCard(dia, planoMedico[dia], 'medico');
-    if (plano[dia])       html += _renderDiaCard(dia, plano[dia], 'paciente');
+    if (modoPlano === 'medico'   || planoMedico[dia]) {
+      html += _renderDiaCard(dia, planoMedico[dia] || {}, 'medico');
+    }
+    if (modoPlano === 'paciente' || plano[dia]) {
+      html += _renderDiaCard(dia, plano[dia] || {}, 'paciente');
+    }
     return html;
   }).join('');
+
   atualizarResumoDiario();
 }
 
