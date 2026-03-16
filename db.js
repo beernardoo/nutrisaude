@@ -88,6 +88,7 @@ async function carregarDados() {
     Object.keys(plano).forEach(k => delete plano[k]);
     if (resPlano.data?.dados) {
       Object.assign(plano, resPlano.data.dados);
+      localStorage.setItem('ns_plano_paciente', JSON.stringify(plano)); // mantém cache sincronizado
     }
 
     // Re-renderiza tudo
@@ -200,6 +201,8 @@ async function dbRemoverExame(id) {
    PLANO ALIMENTAR
    ══════════════════════════════════════════════════════════════════════ */
 async function dbSalvarPlano(dadosPlano) {
+  // Backup local imediato — garante persistência mesmo offline
+  localStorage.setItem('ns_plano_paciente', JSON.stringify(dadosPlano));
   const uid = await dbUserId();
   if (!uid) return;
   const { error } = await _supabase.from('plano_alimentar').upsert(

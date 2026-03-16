@@ -228,24 +228,65 @@ const ALIMENTOS = [
 
 /* ── Unidades inteligentes por alimento ─────────── */
 const FOOD_UNITS = {
-  'Ovo cozido/mexido':         { u:'unid.',  p:50  },
-  'Pão integral':              { u:'fatia',  p:25  },
-  'Banana':                    { u:'unid.',  p:100 },
-  'Maçã':                      { u:'unid.',  p:120 },
-  'Laranja':                   { u:'unid.',  p:130 },
-  'Kiwi':                      { u:'unid.',  p:80  },
-  'Morango':                   { u:'unid.',  p:15  },
-  'Mamão (formosa)':           { u:'fatia',  p:130 },
-  'Abacaxi':                   { u:'fatia',  p:100 },
-  'Melancia':                  { u:'fatia',  p:200 },
-  'Uva':                       { u:'cacho',  p:100 },
-  'Leite integral':            { u:'ml',     p:1   },
-  'Leite desnatado':           { u:'ml',     p:1   },
-  'Azeite de oliva':           { u:'ml',     p:1   },
-  'Óleo de coco':              { u:'ml',     p:1   },
-  'Queijo mussarela':          { u:'fatia',  p:20  },
-  'Cream cheese / Requeijão':  { u:'col.',   p:15  },
-  'Requeijão light':           { u:'col.',   p:15  },
+  // CARBOIDRATOS
+  'Arroz branco cozido':     { u:'col.sopa',  p:25  }, // 1 col.sopa cheia ≈ 25g
+  'Arroz integral cozido':   { u:'col.sopa',  p:25  },
+  'Pão francês':             { u:'unid.',     p:50  },
+  'Pão integral':            { u:'fatia',     p:25  },
+  'Macarrão cozido':         { u:'col.sopa',  p:30  },
+  'Batata inglesa cozida':   { u:'unid. méd', p:130 },
+  'Batata-doce cozida':      { u:'unid. méd', p:130 },
+  'Mandioca cozida':         { u:'pedaço',    p:100 },
+  'Aveia em flocos':         { u:'col.sopa',  p:20  },
+  'Quinoa cozida':           { u:'col.sopa',  p:25  },
+  'Milho cozido':            { u:'col.sopa',  p:30  },
+  'Feijão carioca cozido':   { u:'col.sopa',  p:25  },
+  'Lentilha cozida':         { u:'col.sopa',  p:25  },
+  'Grão-de-bico cozido':     { u:'col.sopa',  p:25  },
+  // PROTEÍNAS
+  'Ovo inteiro cozido':      { u:'unid.',     p:50  },
+  'Atum em água':            { u:'col.sopa',  p:30  },
+  'Sardinha em conserva':    { u:'unid.',     p:30  },
+  'Whey Protein (pó)':       { u:'dose',      p:30  },
+  'Tofu':                    { u:'fatia',     p:100 },
+  // GORDURAS BOAS
+  'Abacate':                 { u:'col.sopa',  p:30  },
+  'Azeite de oliva':         { u:'col.sopa',  p:10  },
+  'Amêndoas':                { u:'unid.',     p:1.2 },
+  'Castanha-do-pará':        { u:'unid.',     p:5   },
+  'Nozes':                   { u:'unid.',     p:7   },
+  'Amendoim torrado':        { u:'col.sopa',  p:20  },
+  'Pasta de amendoim':       { u:'col.sopa',  p:30  },
+  'Óleo de coco':            { u:'col.chá',   p:5   },
+  'Semente de chia':         { u:'col.sopa',  p:15  },
+  'Linhaça':                 { u:'col.sopa',  p:10  },
+  'Coco ralado s/ açúcar':   { u:'col.sopa',  p:15  },
+  // VEGETAIS
+  'Cenoura crua':            { u:'unid. méd', p:80  },
+  'Tomate cru':              { u:'unid. méd', p:100 },
+  'Alface':                  { u:'folha',     p:10  },
+  'Pepino cru':              { u:'fatia',     p:20  },
+  'Beterraba cozida':        { u:'fatia',     p:30  },
+  // FRUTAS
+  'Banana':                  { u:'unid.',     p:100 },
+  'Maçã':                    { u:'unid.',     p:120 },
+  'Laranja':                 { u:'unid.',     p:130 },
+  'Manga':                   { u:'fatia',     p:100 },
+  'Morango':                 { u:'unid.',     p:15  },
+  'Uva':                     { u:'unid.',     p:5   },
+  'Mamão':                   { u:'fatia',     p:130 },
+  'Melancia':                { u:'fatia',     p:200 },
+  'Abacaxi':                 { u:'fatia',     p:100 },
+  'Kiwi':                    { u:'unid.',     p:80  },
+  // LATICÍNIOS
+  'Leite integral':          { u:'ml',        p:1   },
+  'Leite desnatado':         { u:'ml',        p:1   },
+  'Iogurte natural integral':{ u:'pote',      p:170 },
+  'Iogurte grego':           { u:'pote',      p:130 },
+  'Queijo cottage':          { u:'col.sopa',  p:30  },
+  'Queijo mussarela':        { u:'fatia',     p:20  },
+  'Queijo parmesão':         { u:'col.sopa',  p:10  },
+  'Requeijão light':         { u:'col.sopa',  p:15  },
 };
 function _getUnit(nome) { return FOOD_UNITS[nome] || { u:'g', p:1 }; }
 function _sanitizeId(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,'_'); }
@@ -254,7 +295,7 @@ function _sanitizeId(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'
 // Arrays/objetos mutáveis — populados por db.js (carregarDados()) após login
 let medicamentos   = [];
 let exames         = [];
-let plano          = {};
+let plano          = JSON.parse(localStorage.getItem('ns_plano_paciente') || '{}'); // cache local
 let planoMedico    = JSON.parse(localStorage.getItem('ns_plano_medico') || '{}');
 let modoPlano      = localStorage.getItem('ns_modo_plano') || 'medico'; // 'medico' | 'paciente'
 let perfil         = {};
@@ -673,7 +714,8 @@ function confirmarAddAlimentoInline(dia, ref, tipo, formId) {
   const qtdG  = (u === 'g' || u === 'ml') ? qty : qty * p;
   const fator = qtdG / 100;
   const item  = {
-    id: Date.now(), nome: alimento.nome, emoji: alimento.emoji, qtd: qtdG,
+    id: Date.now(), nome: alimento.nome, emoji: alimento.emoji,
+    qtd: qtdG, qtdReal: qty, unit: u,           // armazena qtd real + unidade
     kcal: +(alimento.kcal * fator).toFixed(1), carb: +(alimento.carb * fator).toFixed(1),
     prot: +(alimento.prot * fator).toFixed(1), gord: +(alimento.gord * fator).toFixed(1),
   };
@@ -700,8 +742,10 @@ function atualizarQtdPlano(dia, ref, id, tipo, novaQtdStr) {
   if (idx === -1) return;
   const alimento = ALIMENTOS.find(a => a.nome === alvo[dia][ref][idx].nome);
   if (!alimento) return;
-  const fator = novaQtd / 100;
-  alvo[dia][ref][idx] = { ...alvo[dia][ref][idx], qtd: novaQtd,
+  const { u, p } = _getUnit(alimento.nome);
+  const qtdG  = (u === 'g' || u === 'ml') ? novaQtd : novaQtd * p;
+  const fator = qtdG / 100;
+  alvo[dia][ref][idx] = { ...alvo[dia][ref][idx], qtd: qtdG, qtdReal: novaQtd, unit: u,
     kcal: +(alimento.kcal * fator).toFixed(1), carb: +(alimento.carb * fator).toFixed(1),
     prot: +(alimento.prot * fator).toFixed(1), gord: +(alimento.gord * fator).toFixed(1),
   };
@@ -730,17 +774,20 @@ function _renderDiaCard(dia, diaData, tipo) {
       const media  = imgUrl
         ? `<img src="${imgUrl}" class="food-chip-img" onerror="this.style.display='none'">`
         : `<span class="food-chip-emoji">${item.emoji}</span>`;
-      const { u } = _getUnit(item.nome);
-      const unitLabel = (u === 'g' || u === 'ml') ? u : 'g';
+      // Unidade e quantidade para exibição no chip
+      const { u: uFU } = _getUnit(item.nome);
+      const chipUnit = item.unit || uFU;                                 // usa unidade salva ou detecta
+      const isGramsOrMl = chipUnit === 'g' || chipUnit === 'ml';
+      const chipQty  = (!isGramsOrMl && item.qtdReal != null) ? item.qtdReal : item.qtd;
       return `<div class="food-chip">
         ${media}
         <div class="food-chip-body">
           <span class="food-chip-nome">${esc(item.nome)}</span>
           <div class="food-chip-meta">
-            <input type="number" class="food-chip-qty-input" value="${item.qtd}" min="1"
+            <input type="number" class="food-chip-qty-input" value="${chipQty}" min="0.1" step="any"
               onchange="atualizarQtdPlano('${dia}','${esc(ref)}',${item.id},'${tipo}',this.value)"
-              title="Quantidade em gramas">
-            <span class="food-chip-unit">${unitLabel}</span>
+              title="Quantidade em ${chipUnit}">
+            <span class="food-chip-unit">${chipUnit}</span>
             <span class="food-chip-kcal">${item.kcal.toFixed(0)} kcal</span>
           </div>
         </div>
