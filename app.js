@@ -2246,10 +2246,11 @@ async function dlTudoZIP() {
 let _fotoBase64  = null;
 let _fotoMime    = null;
 let _fotoItensIA = [];   // alimentos retornados pela IA
+const _GEMINI_KEY_DEFAULT = 'AIzaSyC9BHIHPeCiZTzRHXAovCFyhczal3B2ToY';
 
 function abrirModalFoto() {
   document.getElementById('modal-foto').style.display = 'flex';
-  const temChave = !!localStorage.getItem('ns_gemini_key');
+  const temChave = !!(localStorage.getItem('ns_gemini_key') || _GEMINI_KEY_DEFAULT);
   mostrarFotoStep(temChave ? 'upload' : 'key');
   // Pré-seleciona dia de hoje
   const DIAS_PT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -2306,7 +2307,7 @@ function handleFotoUpload(file) {
 }
 
 async function analisarFotoComIA() {
-  const key = localStorage.getItem('ns_gemini_key');
+  const key = localStorage.getItem('ns_gemini_key') || _GEMINI_KEY_DEFAULT;
   if (!key)         { mostrarFotoStep('key');  return; }
   if (!_fotoBase64) { mostrarToast('Selecione uma foto primeiro', 'erro'); return; }
 
