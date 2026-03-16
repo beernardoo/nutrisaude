@@ -82,6 +82,8 @@ async function carregarDados() {
       // Recarrega uso de meds
       usoMeds.length = 0;
       (p.uso_meds || []).forEach(m => usoMeds.push(m));
+      // Sincroniza cache local com dados do Supabase
+      localStorage.setItem('ns_perfil', JSON.stringify({ ...perfil, usoMeds: p.uso_meds || [] }));
     }
 
     // ── Plano alimentar ───────────────────────────────────────────────
@@ -107,15 +109,19 @@ async function carregarDados() {
    PERFIL
    ══════════════════════════════════════════════════════════════════════ */
 async function dbSalvarPerfil(obj) {
-  const uid = await dbUserId();
-  if (!uid) return;
-
-  // Calcula e salva IMC se peso e altura disponíveis
+  // Calcula IMC antes de salvar
   let imcVal = null;
   if (obj.peso && obj.altura) {
     const altM = obj.altura / 100;
     imcVal = parseFloat((obj.peso / (altM * altM)).toFixed(1));
   }
+
+  // Backup local imediato — garante persistência mesmo com Supabase lento ou offline
+  const cacheLocal = { ...obj, imc: imcVal };
+  localStorage.setItem('ns_perfil', JSON.stringify(cacheLocal));
+
+  const uid = await dbUserId();
+  if (!uid) return;
 
   const { error } = await _supabase.from('perfil').upsert({
     id:          uid,

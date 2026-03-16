@@ -1307,6 +1307,32 @@ textarea { resize: vertical; }
 /* Oculta elementos marcados como "detalhe" no modo resumido */
 body.modo-resumido .detalhe { display: none !important; }
 
+/* ── Toast de notificação global ─────────────────────────────────── */
+.ns-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1e293b;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: .9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+}
+.ns-toast.ns-toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.ns-toast.ns-toast-sucesso { background: #166534; }
+.ns-toast.ns-toast-erro    { background: #991b1b; }
+.ns-toast.ns-toast-aviso   { background: #92400e; }
+
 /* ── Toast de migração ─────────────────────────────────────────────── */
 .migration-toast {
   position: fixed;

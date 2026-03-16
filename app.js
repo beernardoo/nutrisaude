@@ -298,8 +298,8 @@ let exames         = [];
 let plano          = JSON.parse(localStorage.getItem('ns_plano_paciente') || '{}'); // cache local
 let planoMedico    = JSON.parse(localStorage.getItem('ns_plano_medico') || '{}');
 let modoPlano      = localStorage.getItem('ns_modo_plano') || 'medico'; // 'medico' | 'paciente'
-let perfil         = {};
-let usoMeds        = [];
+let perfil         = JSON.parse(localStorage.getItem('ns_perfil') || '{}'); // cache local — sobrescrito pelo Supabase após login
+let usoMeds        = (perfil.usoMeds || []);   // restaura uso de medicamentos do cache
 let categoriaAtiva = 'todos';
 
 /* ── ABAS ───────────────────────────────────────── */
@@ -869,6 +869,19 @@ function renderPlano() {
 /* ── UTILITÁRIOS ─────────────────────────────────── */
 // salvar() foi substituído por funções async em db.js (dbInserirMedicamento, dbInserirExame, dbSalvarPlano, dbSalvarPerfil)
 
+/* ── Toast de notificação (substitui alert para não bloquear render mobile) ── */
+function mostrarToast(msg, tipo = 'sucesso') {
+  const old = document.getElementById('ns-toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'ns-toast';
+  t.className = 'ns-toast ns-toast-' + tipo;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('ns-toast-show'), 10);
+  setTimeout(() => { t.classList.remove('ns-toast-show'); setTimeout(() => t.remove(), 300); }, 3000);
+}
+
 function limparForm(ids) { ids.forEach(id => { document.getElementById(id).value = ''; }); }
 
 function esc(str) {
@@ -1083,7 +1096,7 @@ function salvarPerfil() {
   renderLinhasUsoMed();
   registrarEvolucao();
   dbSalvarPerfil({ ...perfil, usoMeds }).then(() => {
-    alert('✅ Dados do paciente salvos com sucesso!');
+    mostrarToast('✅ Dados do paciente salvos com sucesso!');
   });
 }
 
