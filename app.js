@@ -2246,11 +2246,11 @@ async function dlTudoZIP() {
 let _fotoBase64  = null;
 let _fotoMime    = null;
 let _fotoItensIA = [];   // alimentos retornados pela IA
-const _GEMINI_KEY_DEFAULT = 'AIzaSyC9BHIHPeCiZTzRHXAovCFyhczal3B2ToY';
+// Chave Gemini gerenciada via Supabase Edge Function (secret server-side)
 
 function abrirModalFoto() {
   document.getElementById('modal-foto').style.display = 'flex';
-  const temChave = !!(localStorage.getItem('ns_gemini_key') || _GEMINI_KEY_DEFAULT);
+  const temChave = true; // chave gerenciada server-side
   mostrarFotoStep(temChave ? 'upload' : 'key');
   // Pré-seleciona dia de hoje
   const DIAS_PT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
@@ -2307,39 +2307,36 @@ function handleFotoUpload(file) {
 }
 
 async function analisarFotoComIA() {
-  const key = localStorage.getItem('ns_gemini_key') || _GEMINI_KEY_DEFAULT;
-  if (!key)         { mostrarFotoStep('key');  return; }
   if (!_fotoBase64) { mostrarToast('Selecione uma foto primeiro', 'erro'); return; }
 
   mostrarFotoStep('loading');
 
-  const prompt = `Analise esta foto de refeição e identifique todos os alimentos visíveis.\nEstime a quantidade de cada alimento em gramas com base na proporção visual no prato.\nResponda APENAS com JSON válido (sem markdown, sem \`\`\`, sem texto extra) neste formato:\n{\n  "descricao": "descrição breve do prato em português",\n  "alimentos": [\n    {\n      "nome": "nome do alimento em português",\n      "porcao": "porção média",\n      "qtd_g": 150,\n      "kcal": 195,\n      "carb_g": 43.0,\n      "prot_g": 3.6,\n      "gord_g": 0.3\n    }\n  ]\n}\nO campo "porcao" deve descrever a proporção visual: "porção pequena", "porção média", "porção grande", "1 unidade", "2 unidades", "fatia fina", "fatia grossa", etc.\nUse valores nutricionais padrão por 100g para calcular os macros da quantidade estimada.`;
-
   try {
+    // Obter JWT do usuário logado para autenticar na Edge Function
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('Sessão expirada — faça login novamente');
+    }
+
     const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      'https://thsaxtvyubebtsgnntns.supabase.co/functions/v1/analisar-foto',
       {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: _fotoMime, data: _fotoBase64 } },
-              { text: prompt }
-            ]
-          }],
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.2 }
-        })
+        headers: {
+          'content-type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ mimeType: _fotoMime, imageBase64: _fotoBase64 })
       }
     );
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'Erro ' + resp.status);
+      throw new Error(err.error || 'Erro ' + resp.status);
     }
 
     const data    = await resp.json();
-    let   jsonStr = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+    let   jsonStr = (data.text || '').trim();
     // Remove markdown code fences if present
     jsonStr = jsonStr.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '');
 
