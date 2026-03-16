@@ -205,22 +205,23 @@ async function authOnLogin(user) {
 }
 
 /* ── Logout ────────────────────────────────────────────────────────── */
-async function authLogout() {
-  await _supabase.auth.signOut();
-  // Limpa estado global do app
+function authLogout() {
+  // Limpa UI imediatamente — sem await, sem esperar rede
   if (typeof medicamentos !== 'undefined') { medicamentos.length = 0; }
   if (typeof exames       !== 'undefined') { exames.length = 0; }
   if (typeof plano        !== 'undefined') { Object.keys(plano).forEach(k => delete plano[k]); }
   if (typeof perfil       !== 'undefined') { Object.keys(perfil).forEach(k => delete perfil[k]); }
   if (typeof usoMeds      !== 'undefined') { usoMeds.length = 0; }
 
-  // Re-renderiza telas vazias
   if (typeof renderMedicamentos === 'function') renderMedicamentos();
   if (typeof renderExames       === 'function') renderExames();
   if (typeof renderPlano        === 'function') renderPlano();
 
   atualizarHeaderUsuario('');
   authExibirOverlay();
+
+  // signOut em background — não bloqueia a UI
+  _supabase.auth.signOut().catch(() => {});
 }
 
 /* ── Verificação de sessão ao carregar ─────────────────────────────── */

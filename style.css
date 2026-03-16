@@ -1371,3 +1371,212 @@ body.modo-resumido .detalhe { display: none !important; }
   .header-user { display: flex; }
   .user-email { display: none; }
 }
+
+/* ════════════════════════════════════════════════
+   MODAL — Analisar Refeição por Foto
+   ════════════════════════════════════════════════ */
+#modal-foto {
+  z-index: 10000;
+  backdrop-filter: blur(2px);
+}
+.foto-modal-box {
+  background: #fff; border-radius: 18px;
+  width: 100%; max-width: 520px;
+  max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.28);
+  animation: modalEntrar .2s ease;
+}
+@keyframes modalEntrar {
+  from { opacity:0; transform:translateY(16px) scale(.97); }
+  to   { opacity:1; transform:none; }
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9;
+  font-size: 1rem; font-weight: 700; color: #1e293b; gap: 12px;
+}
+.modal-close {
+  background: none; border: none; font-size: 1.15rem; cursor: pointer;
+  color: #94a3b8; padding: 4px 8px; border-radius: 6px; line-height: 1;
+  transition: background .15s;
+}
+.modal-close:hover { background: #f1f5f9; color: #475569; }
+.modal-body { padding: 20px 24px 24px; }
+
+/* Dropzone */
+.foto-dropzone {
+  border: 2px dashed #c7d2fe; background: #f8faff; border-radius: 14px;
+  padding: 36px 20px; text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  user-select: none;
+}
+.foto-dropzone:hover { border-color: var(--primary); background: #eef2ff; }
+.foto-dropzone-icon { font-size: 2.8rem; margin-bottom: 10px; line-height: 1; }
+.foto-dropzone-texto { font-size: .88rem; color: #555; line-height: 1.6; }
+.foto-dropzone-texto span { font-size: .78rem; color: #94a3b8; }
+
+/* Spinner */
+.foto-spinner {
+  width: 48px; height: 48px;
+  border: 4px solid #e2e8f0; border-top-color: var(--primary);
+  border-radius: 50%; animation: spin .75s linear infinite; margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Badge estimativa */
+.foto-estimativa-badge {
+  display: inline-block; font-size: .72rem; font-weight: 600;
+  color: #92400e; background: #fef3c7; border: 1px solid #fde68a;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 4px;
+}
+.foto-descricao-texto {
+  font-size: .85rem; color: #475569; font-style: italic;
+  margin-bottom: 8px; line-height: 1.5;
+}
+
+/* Itens resultado */
+.foto-alimento-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+  margin-bottom: 8px; background: #fafafa; transition: border-color .15s;
+}
+.foto-alimento-item:hover { border-color: #c7d2fe; }
+.foto-alimento-info { flex: 1; min-width: 0; }
+.foto-alimento-nome {
+  font-size: .86rem; font-weight: 600; color: #1e293b;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.foto-alimento-macros { font-size: .73rem; color: #64748b; margin-top: 2px; }
+.foto-alimento-qtd-wrap { display: flex; align-items: center; gap: 4px; }
+.foto-alimento-qtd {
+  width: 62px; font-size: .85rem; text-align: center; padding: 4px 6px;
+  border: 1px solid #e2e8f0; border-radius: 6px; color: #1e293b;
+  font-weight: 500;
+}
+.foto-alimento-qtd:focus { border-color: var(--primary); outline: none; }
+.foto-alimento-unit { font-size: .75rem; color: #94a3b8; }
+.foto-alimento-kcal {
+  font-size: .82rem; color: #6366f1; font-weight: 700; white-space: nowrap; min-width: 56px; text-align: right;
+}
+.foto-alimento-remove {
+  background: none; border: none; color: #cbd5e1; cursor: pointer;
+  font-size: 1rem; padding: 4px 6px; border-radius: 6px; line-height: 1;
+  transition: all .15s;
+}
+.foto-alimento-remove:hover { color: #ef4444; background: #fee2e2; }
+
+/* Badge de porção visual */
+.foto-porcao-badge {
+  display: inline-block; font-size: .68rem; font-weight: 500;
+  color: #6366f1; background: #eef2ff; border: 1px solid #c7d2fe;
+  padding: 1px 7px; border-radius: 20px; margin-left: 7px;
+  vertical-align: middle;
+}
+
+/* Linha de total estimado */
+.foto-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; margin-top: 4px;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px;
+  font-size: .88rem; font-weight: 700; color: #166534;
+}
+
+/* Botão foto IA no plano alimentar */
+.btn-foto-ia {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff; border: none; border-radius: 8px;
+  padding: 6px 14px; font-size: .8rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: opacity .2s; display: flex; align-items: center; gap: 5px;
+}
+.btn-foto-ia:hover { opacity: .88; }
+.btn-foto-ia-full {
+  width: 100%; justify-content: center;
+  padding: 10px 16px; font-size: .87rem; border-radius: 10px;
+}
+
+@media (max-width: 480px) {
+  .foto-modal-box { border-radius: 14px; max-height: 95vh; }
+  .modal-header { padding: 16px 18px 13px; font-size: .93rem; }
+  .modal-body { padding: 16px 18px 20px; }
+}
+
+/* ════════════════════════════════════════════════
+   CENTRAL DE DOWNLOADS
+   ════════════════════════════════════════════════ */
+.dl-card { margin-bottom: 1rem; }
+.dl-card-top {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+}
+.dl-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+.dl-info { flex: 1; min-width: 0; }
+.dl-titulo { font-weight: 700; font-size: .96rem; color: #1e293b; }
+.dl-sub { font-size: .81rem; color: #64748b; margin-top: 3px; }
+
+.dl-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-dl {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: none; border-radius: 8px;
+  font-size: .82rem; font-weight: 600; cursor: pointer;
+  transition: opacity .18s, transform .1s;
+}
+.btn-dl:hover  { opacity: .82; }
+.btn-dl:active { transform: scale(.96); }
+.btn-dl-pdf { background: #fee2e2; color: #b91c1c; }
+.btn-dl-csv { background: #dcfce7; color: #15803d; }
+.btn-dl-xls { background: #d1fae5; color: #065f46; }
+.btn-dl-zip { background: #e0e7ff; color: #4338ca; }
+.btn-dl-lg  { padding: 10px 22px; font-size: .88rem; }
+
+.btn-dl-add {
+  background: var(--primary); color: #fff; border: none;
+  width: 34px; height: 34px; border-radius: 8px;
+  font-size: 1.4rem; line-height: 1; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .18s;
+}
+.btn-dl-add:hover { opacity: .85; }
+
+/* Card geral */
+.dl-card-geral {
+  background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%);
+  border: 1.5px solid #c7d2fe !important;
+}
+
+/* Fotos grid */
+.bio-fotos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.bio-foto-item {
+  position: relative; border-radius: 10px; overflow: hidden;
+  aspect-ratio: 1 / 1; background: #f1f5f9; cursor: pointer;
+}
+.bio-foto-item img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.bio-foto-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0);
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px; transition: background .18s;
+}
+.bio-foto-item:hover .bio-foto-overlay { background: rgba(0,0,0,.48); }
+.bio-foto-btn {
+  background: rgba(255,255,255,.92); border: none; border-radius: 6px;
+  padding: 4px 8px; font-size: .72rem; font-weight: 700; cursor: pointer;
+  opacity: 0; transition: opacity .18s;
+}
+.bio-foto-item:hover .bio-foto-btn { opacity: 1; }
+.bio-foto-del { color: #ef4444; }
+.bio-foto-data {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.48); color: #fff;
+  font-size: .63rem; padding: 3px 5px; text-align: center;
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .bio-fotos-grid { grid-template-columns: repeat(3, 1fr); }
+  .btn-dl { padding: 8px 12px; font-size: .79rem; }
+}

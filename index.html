@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NutriSaúde — Gestão Nutricional &amp; Medicamentos</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260316" />
   <!-- SheetJS para XLSX/XLS -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <!-- PDF.js para leitura de PDF -->
@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <!-- Supabase JS — banco de dados e autenticação -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
+  <script src="supabase-init.js?v=20260316"></script>
   <!-- Chart.js para gráficos do dashboard -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -36,6 +36,7 @@
         <button class="tab-btn" data-tab="plano">📋 Plano Alimentar</button>
         <button class="tab-btn" data-tab="suplementacao">💊 Suplementação</button>
         <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="downloads">📥 Downloads</button>
       </nav>
       <button id="btn-view-toggle" class="btn-view-toggle" onclick="toggleModoView()" title="Alternar modo de visualização">
         📋 Ver tudo
@@ -515,12 +516,13 @@
 
       <!-- Modo do plano -->
       <div class="card" style="margin-bottom:1rem">
-        <div class="card-body" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;padding:14px 20px">
-          <div style="display:flex;gap:8px">
+        <div class="card-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <button id="btn-modo-medico" class="btn btn-sm btn-modo-plano active" onclick="setModoPlano('medico')">👨‍⚕️ Modo Médico</button>
             <button id="btn-modo-paciente" class="btn btn-sm btn-outline btn-modo-plano" onclick="setModoPlano('paciente')">👤 Modo Paciente</button>
           </div>
-          <p id="plano-modo-desc" style="margin:0;font-size:.88rem;color:#555">
+          <button class="btn btn-foto-ia btn-foto-ia-full" onclick="abrirModalFoto()" title="Identificar alimentos por foto com IA">📸 Analisar foto do prato</button>
+          <p id="plano-modo-desc" style="margin:0;font-size:.85rem;color:#64748b">
             👨‍⚕️ <strong>Modo Médico</strong> — Editando plano prescrito para o paciente
           </p>
         </div>
@@ -873,6 +875,108 @@
       </div>
     </section>
 
+    <!-- ==================== ABA: DOWNLOADS ==================== -->
+    <section id="tab-downloads" class="tab-panel">
+      <div class="section-header">
+        <h2>📥 Central de Downloads</h2>
+        <p>Exporte os dados do paciente em PDF, CSV, XLS ou ZIP</p>
+      </div>
+
+      <!-- Exames -->
+      <div class="card dl-card">
+        <div class="dl-card-top">
+          <span class="dl-icon">🔬</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Exames Laboratoriais</div>
+            <div class="dl-sub" id="dl-exames-info">—</div>
+          </div>
+        </div>
+        <div class="dl-btns">
+          <button class="btn-dl btn-dl-pdf" onclick="dlExamesPDF()">📄 PDF</button>
+          <button class="btn-dl btn-dl-csv" onclick="dlExamesCSV()">📋 CSV</button>
+          <button class="btn-dl btn-dl-xls" onclick="dlExamesXLS()">📊 XLS</button>
+        </div>
+      </div>
+
+      <!-- Medicamentos -->
+      <div class="card dl-card">
+        <div class="dl-card-top">
+          <span class="dl-icon">💊</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Medicamentos</div>
+            <div class="dl-sub" id="dl-meds-info">—</div>
+          </div>
+        </div>
+        <div class="dl-btns">
+          <button class="btn-dl btn-dl-pdf" onclick="dlMedsPDF()">📄 PDF</button>
+          <button class="btn-dl btn-dl-csv" onclick="dlMedsCSV()">📋 CSV</button>
+          <button class="btn-dl btn-dl-xls" onclick="dlMedsXLS()">📊 XLS</button>
+        </div>
+      </div>
+
+      <!-- Plano Alimentar -->
+      <div class="card dl-card">
+        <div class="dl-card-top">
+          <span class="dl-icon">🥗</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Plano Alimentar</div>
+            <div class="dl-sub" id="dl-plano-info">—</div>
+          </div>
+        </div>
+        <div class="dl-btns">
+          <button class="btn-dl btn-dl-pdf" onclick="dlPlanoPDF()">📄 PDF</button>
+          <button class="btn-dl btn-dl-csv" onclick="dlPlanoCSV()">📋 CSV</button>
+          <button class="btn-dl btn-dl-xls" onclick="dlPlanoXLS()">📊 XLS</button>
+        </div>
+      </div>
+
+      <!-- Fotos Bioimpedância -->
+      <div class="card dl-card">
+        <div class="dl-card-top">
+          <span class="dl-icon">📸</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Fotos Bioimpedância</div>
+            <div class="dl-sub" id="dl-fotos-info">Nenhuma foto adicionada</div>
+          </div>
+          <button class="btn-dl-add" onclick="document.getElementById('bio-foto-input').click()" title="Adicionar fotos">＋</button>
+          <input type="file" id="bio-foto-input" accept="image/*" multiple style="display:none" onchange="uploadFotosBio(this.files)" />
+        </div>
+        <div id="bio-fotos-grid" class="bio-fotos-grid"></div>
+        <div class="dl-btns" id="dl-fotos-btns" style="display:none;margin-top:8px">
+          <button class="btn-dl btn-dl-zip" onclick="dlFotosBioZIP()">📦 ZIP todas</button>
+        </div>
+      </div>
+
+      <!-- Relatório Completo -->
+      <div class="card dl-card">
+        <div class="dl-card-top">
+          <span class="dl-icon">📋</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Relatório Completo do Paciente</div>
+            <div class="dl-sub">Dados pessoais, exames, medicamentos e plano alimentar</div>
+          </div>
+        </div>
+        <div class="dl-btns">
+          <button class="btn-dl btn-dl-pdf btn-dl-lg" onclick="dlRelatorioPDF()">📄 PDF Completo</button>
+        </div>
+      </div>
+
+      <!-- Download Geral -->
+      <div class="card dl-card dl-card-geral">
+        <div class="dl-card-top">
+          <span class="dl-icon">📦</span>
+          <div class="dl-info">
+            <div class="dl-titulo">Download Geral</div>
+            <div class="dl-sub">Todos os dados compactados em um único arquivo ZIP</div>
+          </div>
+        </div>
+        <div class="dl-btns">
+          <button class="btn-dl btn-dl-zip btn-dl-lg" onclick="dlTudoZIP()">📦 Baixar ZIP Geral</button>
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
   <footer class="footer">
@@ -950,8 +1054,95 @@
     </div>
   </div>
 
-  <script src="db.js"></script>
-  <script src="auth.js"></script>
-  <script src="app.js"></script>
+  <script src="db.js?v=20260316"></script>
+  <script src="auth.js?v=20260316"></script>
+  <!-- Bibliotecas de export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js?v=20260316"></script>
+
+  <!-- ==================== MODAL: ANALISAR REFEIÇÃO POR FOTO ==================== -->
+  <div id="modal-foto" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalFoto()">
+    <div class="foto-modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span>📸 Analisar Refeição por Foto</span>
+        <button class="modal-close" onclick="fecharModalFoto()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Step: Chave API -->
+        <div id="foto-step-key" style="display:none">
+          <p style="font-size:.88rem;color:#555;margin-bottom:14px;line-height:1.6">Para usar a análise por IA, insira sua chave da API Anthropic (Claude). Ela será salva <strong>localmente</strong> no dispositivo.</p>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Chave da API Anthropic</label>
+            <input type="password" id="foto-api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="salvarChaveAPI()">Salvar e continuar →</button>
+          <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener" style="font-size:.78rem;display:block;margin-top:10px;color:#6366f1;text-align:center">Obter chave em console.anthropic.com →</a>
+        </div>
+
+        <!-- Step: Upload -->
+        <div id="foto-step-upload">
+          <div id="foto-dropzone" class="foto-dropzone" onclick="document.getElementById('foto-file-input').click()">
+            <div class="foto-dropzone-icon">📷</div>
+            <div class="foto-dropzone-texto">Toque para tirar foto ou escolher da galeria<br><span>Formatos: JPG, PNG, WEBP</span></div>
+            <input type="file" id="foto-file-input" accept="image/*" capture="environment" style="display:none" onchange="handleFotoUpload(this.files[0])" />
+          </div>
+          <img id="foto-preview" src="" alt="preview" style="display:none;width:100%;border-radius:12px;margin-top:12px;max-height:280px;object-fit:cover" />
+          <button id="btn-analisar-foto" class="btn btn-primary" style="display:none;width:100%;margin-top:12px" onclick="analisarFotoComIA()">🔍 Identificar alimentos com IA</button>
+          <div id="foto-key-hint" style="text-align:right;margin-top:8px">
+            <button onclick="mostrarFotoStep('key')" style="background:none;border:none;color:#94a3b8;font-size:.75rem;cursor:pointer">🔑 Alterar chave API</button>
+          </div>
+        </div>
+
+        <!-- Step: Analisando -->
+        <div id="foto-step-loading" style="display:none;text-align:center;padding:48px 20px">
+          <div class="foto-spinner"></div>
+          <p style="margin-top:18px;font-size:.92rem;color:#555;font-weight:500">Identificando alimentos...</p>
+          <p style="font-size:.8rem;color:#94a3b8;margin-top:6px">Isso pode levar alguns segundos</p>
+        </div>
+
+        <!-- Step: Resultado -->
+        <div id="foto-step-resultado" style="display:none">
+          <p id="foto-descricao" class="foto-descricao-texto"></p>
+          <span class="foto-estimativa-badge">⚡ Estimativas da IA — ajuste as quantidades se necessário</span>
+          <div id="foto-alimentos-lista" style="margin-top:10px"></div>
+          <div class="form-grid" style="margin-top:16px">
+            <div class="form-group">
+              <label>Dia</label>
+              <select id="foto-sel-dia">
+                <option value="Segunda">Segunda-feira</option>
+                <option value="Terça">Terça-feira</option>
+                <option value="Quarta">Quarta-feira</option>
+                <option value="Quinta">Quinta-feira</option>
+                <option value="Sexta">Sexta-feira</option>
+                <option value="Sábado">Sábado</option>
+                <option value="Domingo">Domingo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Refeição</label>
+              <select id="foto-sel-refeicao">
+                <option value="Café da manhã">☀️ Café da manhã</option>
+                <option value="Lanche da manhã">🍎 Lanche da manhã</option>
+                <option value="Almoço">🍽️ Almoço</option>
+                <option value="Lanche da tarde">🥗 Lanche da tarde</option>
+                <option value="Jantar">🌙 Jantar</option>
+                <option value="Ceia">🌛 Ceia</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-outline" style="white-space:nowrap" onclick="voltarFotoUpload()">← Nova foto</button>
+            <button class="btn btn-primary" style="flex:1" onclick="confirmarAlimentosFoto()">✅ Salvar no plano</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

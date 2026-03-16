@@ -311,6 +311,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'suplementacao') setTimeout(gerarAnaliseSuple, 50);
     if (btn.dataset.tab === 'dashboard')     setTimeout(atualizarDashboard, 50);
+    if (btn.dataset.tab === 'downloads')     setTimeout(atualizarInfoDownloads, 50);
   });
 });
 
@@ -1871,6 +1872,617 @@ function aplicarModoView() {
     document.body.classList.add('modo-completo');
     if (btn) { btn.innerHTML = '✂️ Resumido'; btn.classList.add('ativo'); }
   }
+}
+
+/* ══════════════════════════════════════════════════
+   MÓDULO: CENTRAL DE DOWNLOADS
+══════════════════════════════════════════════════ */
+
+// Fotos bioimpedância — persistência local
+let fotosBio = JSON.parse(localStorage.getItem('ns_fotos_bio') || '[]');
+
+/* ── Info dos cards ──────────────────────────────── */
+function atualizarInfoDownloads() {
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+  const qEx  = (exames        || []).length;
+  const qMed = (medicamentos  || []).length;
+  let   qPla = 0;
+  [planoMedico, plano].forEach(p => {
+    Object.values(p).forEach(dia => Object.values(dia).forEach(ref => { qPla += ref.length; }));
+  });
+
+  set('dl-exames-info', qEx  ? `${qEx} exame${qEx>1?'s':''} registrado${qEx>1?'s':''}`         : 'Nenhum exame registrado');
+  set('dl-meds-info',   qMed ? `${qMed} medicamento${qMed>1?'s':''} registrado${qMed>1?'s':''}` : 'Nenhum medicamento registrado');
+  set('dl-plano-info',  qPla ? `${qPla} item${qPla>1?'s':''} no plano`                          : 'Plano vazio');
+  set('dl-fotos-info',  fotosBio.length ? `${fotosBio.length} foto${fotosBio.length>1?'s':''}` : 'Nenhuma foto adicionada');
+
+  renderFotosBio();
+  const bBtn = document.getElementById('dl-fotos-btns');
+  if (bBtn) bBtn.style.display = fotosBio.length ? 'flex' : 'none';
+}
+
+/* ── Fotos Bioimpedância ─────────────────────────── */
+function uploadFotosBio(files) {
+  const promises = [...files].map(file => new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => resolve({ id: Date.now() + Math.random(), nome: file.name, data: new Date().toLocaleDateString('pt-BR'), dataUrl: e.target.result });
+    reader.readAsDataURL(file);
+  }));
+  Promise.all(promises).then(novas => {
+    fotosBio = [...fotosBio, ...novas];
+    try { localStorage.setItem('ns_fotos_bio', JSON.stringify(fotosBio)); }
+    catch { mostrarToast('Armazenamento cheio — fotos apenas nesta sessão', 'erro'); }
+    atualizarInfoDownloads();
+    document.getElementById('bio-foto-input').value = '';
+    mostrarToast(`${novas.length} foto${novas.length>1?'s adicionadas':' adicionada'} ✅`);
+  });
+}
+
+function removerFotoBio(id) {
+  fotosBio = fotosBio.filter(f => String(f.id) !== String(id));
+  localStorage.setItem('ns_fotos_bio', JSON.stringify(fotosBio));
+  atualizarInfoDownloads();
+}
+
+function renderFotosBio() {
+  const grid = document.getElementById('bio-fotos-grid');
+  if (!grid) return;
+  grid.innerHTML = fotosBio.map(f => `
+    <div class="bio-foto-item">
+      <img src="${f.dataUrl}" alt="${f.nome}" loading="lazy" />
+      <div class="bio-foto-overlay">
+        <button class="bio-foto-btn" onclick="_dlFotoBioById('${f.id}')">⬇ Baixar</button>
+        <button class="bio-foto-btn bio-foto-del" onclick="removerFotoBio('${f.id}')">✕</button>
+      </div>
+      <div class="bio-foto-data">${f.data}</div>
+    </div>
+  `).join('');
+}
+
+function _dlFotoBioById(id) {
+  const f = fotosBio.find(x => String(x.id) === String(id));
+  if (!f) return;
+  const a = document.createElement('a');
+  a.href = f.dataUrl; a.download = f.nome || 'foto_bio.jpg'; a.click();
+}
+
+async function dlFotosBioZIP() {
+  if (!fotosBio.length) { mostrarToast('Nenhuma foto para baixar', 'erro'); return; }
+  if (!window.JSZip)   { mostrarToast('Biblioteca ZIP não carregada', 'erro'); return; }
+  mostrarToast('Gerando ZIP...');
+  const zip    = new JSZip();
+  const folder = zip.folder('fotos_bioimpedancia');
+  fotosBio.forEach((f, i) => {
+    const ext  = (f.dataUrl.split(';')[0].split('/')[1] || 'jpg').replace('jpeg','jpg');
+    folder.file(f.nome || `foto_${i+1}.${ext}`, f.dataUrl.split(',')[1], { base64: true });
+  });
+  const blob = await zip.generateAsync({ type: 'blob' });
+  _dlBlob(blob, `fotos_bio_${_dlHoje()}.zip`);
+  mostrarToast('ZIP de fotos gerado ✅');
+}
+
+/* ── Utilitários ─────────────────────────────────── */
+function _dlBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function _dlHoje()     { return new Date().toISOString().slice(0, 10); }
+function _dlPaciente() { return (perfil.nome || 'paciente').replace(/\s+/g,'_').toLowerCase().replace(/[^a-z0-9_]/g,'') || 'paciente'; }
+function _csvStr(rows) {
+  return rows.map(r => r.map(c => {
+    const s = String(c ?? '').replace(/"/g, '""');
+    return /[;,\n"]/.test(s) ? `"${s}"` : s;
+  }).join(';')).join('\n');
+}
+function _dlCSV(rows, filename) {
+  _dlBlob(new Blob(['\uFEFF' + _csvStr(rows)], { type: 'text/csv;charset=utf-8' }), filename);
+}
+function _dlXLS(rows, sheetName, filename) {
+  if (!window.XLSX) { mostrarToast('Biblioteca XLS não carregada', 'erro'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, filename);
+}
+function _pdfHeader(doc, titulo) {
+  const W = doc.internal.pageSize.width;
+  doc.setFillColor(99, 102, 241);
+  doc.rect(0, 0, W, 16, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont(undefined, 'bold');
+  doc.text('NutriSaúde — ' + titulo, 14, 11);
+  doc.text(_dlHoje(), W - 14, 11, { align: 'right' });
+  doc.setTextColor(30, 41, 59);
+}
+function _checkPDF() {
+  if (!window.jspdf) { mostrarToast('Biblioteca PDF não carregada — recarregue a página', 'erro'); return false; }
+  return true;
+}
+
+/* ── Exames ──────────────────────────────────────── */
+function _examesRows() {
+  return [
+    ['Data', 'Exame', 'Resultado', 'Unidade', 'Referência', 'Status'],
+    ...(exames || []).map(e => [e.data || '—', e.nome || e.tipo, e.resultado, e.unidade, e.referencia || '—', e.status])
+  ];
+}
+function dlExamesCSV() {
+  if (!exames.length) { mostrarToast('Nenhum exame registrado', 'erro'); return; }
+  _dlCSV(_examesRows(), `exames_${_dlPaciente()}_${_dlHoje()}.csv`);
+}
+function dlExamesXLS() {
+  if (!exames.length) { mostrarToast('Nenhum exame registrado', 'erro'); return; }
+  _dlXLS(_examesRows(), 'Exames', `exames_${_dlPaciente()}_${_dlHoje()}.xlsx`);
+}
+function dlExamesPDF() {
+  if (!exames.length) { mostrarToast('Nenhum exame registrado', 'erro'); return; }
+  if (!_checkPDF()) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+  _pdfHeader(doc, 'Exames Laboratoriais');
+  doc.autoTable({
+    startY: 22,
+    head: [['Data', 'Exame', 'Resultado', 'Unidade', 'Referência', 'Status']],
+    body: (exames || []).map(e => [e.data || '—', e.nome || e.tipo, e.resultado, e.unidade, e.referencia || '—', e.status]),
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: { 1: { cellWidth: 55 }, 4: { cellWidth: 50 } }
+  });
+  doc.save(`exames_${_dlPaciente()}_${_dlHoje()}.pdf`);
+}
+
+/* ── Medicamentos ────────────────────────────────── */
+function _medsRows() {
+  return [
+    ['Nome', 'Dosagem', 'Frequência', 'Início', 'Observações', 'Registrado por'],
+    ...(medicamentos || []).map(m => [m.nome, m.dosagem || '—', m.freq || '—', m.inicio || '—', m.obs || '—', m.regPor || '—'])
+  ];
+}
+function dlMedsCSV() {
+  if (!medicamentos.length) { mostrarToast('Nenhum medicamento registrado', 'erro'); return; }
+  _dlCSV(_medsRows(), `medicamentos_${_dlPaciente()}_${_dlHoje()}.csv`);
+}
+function dlMedsXLS() {
+  if (!medicamentos.length) { mostrarToast('Nenhum medicamento registrado', 'erro'); return; }
+  _dlXLS(_medsRows(), 'Medicamentos', `medicamentos_${_dlPaciente()}_${_dlHoje()}.xlsx`);
+}
+function dlMedsPDF() {
+  if (!medicamentos.length) { mostrarToast('Nenhum medicamento registrado', 'erro'); return; }
+  if (!_checkPDF()) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  _pdfHeader(doc, 'Medicamentos');
+  doc.autoTable({
+    startY: 22,
+    head: [['Nome', 'Dosagem', 'Frequência', 'Início', 'Observações']],
+    body: (medicamentos || []).map(m => [m.nome, m.dosagem || '—', m.freq || '—', m.inicio || '—', m.obs || '—']),
+    styles: { fontSize: 9, cellPadding: 4 },
+    headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] }
+  });
+  doc.save(`medicamentos_${_dlPaciente()}_${_dlHoje()}.pdf`);
+}
+
+/* ── Plano Alimentar ─────────────────────────────── */
+function _planoRows() {
+  const header = ['Tipo', 'Dia', 'Refeição', 'Alimento', 'Qtd', 'Unid.', 'Kcal', 'Carb (g)', 'Prot (g)', 'Gord (g)'];
+  const rows = [];
+  [['Prescrito', planoMedico], ['Pessoal', plano]].forEach(([tipo, p]) => {
+    DIAS_ORDEM.forEach(dia => {
+      if (!p[dia]) return;
+      Object.entries(p[dia]).forEach(([ref, itens]) => {
+        itens.forEach(item => {
+          rows.push([tipo, dia, ref, item.nome,
+            item.qtdReal ?? item.qtd, item.unit || 'g',
+            +(item.kcal || 0).toFixed(1), +(item.carb || 0).toFixed(1),
+            +(item.prot || 0).toFixed(1), +(item.gord || 0).toFixed(1)]);
+        });
+      });
+    });
+  });
+  return [header, ...rows];
+}
+function dlPlanoCSV() {
+  const rows = _planoRows();
+  if (rows.length <= 1) { mostrarToast('Plano alimentar vazio', 'erro'); return; }
+  _dlCSV(rows, `plano_alimentar_${_dlPaciente()}_${_dlHoje()}.csv`);
+}
+function dlPlanoXLS() {
+  const rows = _planoRows();
+  if (rows.length <= 1) { mostrarToast('Plano alimentar vazio', 'erro'); return; }
+  _dlXLS(rows, 'Plano Alimentar', `plano_alimentar_${_dlPaciente()}_${_dlHoje()}.xlsx`);
+}
+function dlPlanoPDF() {
+  const rows = _planoRows();
+  if (rows.length <= 1) { mostrarToast('Plano alimentar vazio', 'erro'); return; }
+  if (!_checkPDF()) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+  _pdfHeader(doc, 'Plano Alimentar');
+  doc.autoTable({
+    startY: 22,
+    head: [rows[0]],
+    body: rows.slice(1),
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [240, 253, 250] }
+  });
+  doc.save(`plano_alimentar_${_dlPaciente()}_${_dlHoje()}.pdf`);
+}
+
+/* ── Relatório Completo ──────────────────────────── */
+function _criarRelatorioPDF() {
+  if (!window.jspdf) return null;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 22;
+
+  _pdfHeader(doc, 'Relatório do Paciente');
+
+  // Dados pessoais
+  doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('Dados do Paciente', 14, y); y += 6;
+  doc.setFontSize(9); doc.setFont(undefined, 'normal');
+  const linhas = [
+    `Nome: ${perfil.nome || '—'}    Sexo: ${perfil.sexo || '—'}`,
+    `Peso: ${perfil.peso ? perfil.peso + ' kg' : '—'}    Altura: ${perfil.altura ? perfil.altura + ' m' : '—'}    IMC: ${perfil.imc || '—'}`,
+    `Cintura: ${perfil.cintura ? perfil.cintura + ' cm' : '—'}    Atividade: ${perfil.atividade || '—'}    Objetivo: ${perfil.objetivo || '—'}`
+  ];
+  linhas.forEach(l => { doc.text(l, 14, y); y += 5.5; });
+  y += 3;
+
+  // Medicamentos
+  if ((medicamentos || []).length) {
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('Medicamentos', 14, y); y += 1;
+    doc.autoTable({
+      startY: y, margin: { left: 14, right: 14 },
+      head: [['Nome', 'Dosagem', 'Frequência', 'Início']],
+      body: medicamentos.map(m => [m.nome, m.dosagem || '—', m.freq || '—', m.inicio || '—']),
+      styles: { fontSize: 8, cellPadding: 2.5 },
+      headStyles: { fillColor: [99, 102, 241], textColor: 255 },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // Exames
+  if ((exames || []).length) {
+    if (y > 235) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('Exames Laboratoriais', 14, y); y += 1;
+    doc.autoTable({
+      startY: y, margin: { left: 14, right: 14 },
+      head: [['Data', 'Exame', 'Resultado', 'Unidade', 'Status']],
+      body: exames.map(e => [e.data || '—', e.nome || e.tipo, e.resultado, e.unidade, e.status]),
+      styles: { fontSize: 8, cellPadding: 2.5 },
+      headStyles: { fillColor: [16, 185, 129], textColor: 255 },
+      alternateRowStyles: { fillColor: [240, 253, 250] }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // Plano Alimentar
+  const planoR = _planoRows();
+  if (planoR.length > 1) {
+    if (y > 220) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.text('Plano Alimentar', 14, y); y += 1;
+    doc.autoTable({
+      startY: y, margin: { left: 14, right: 14 },
+      head: [['Dia', 'Refeição', 'Alimento', 'Qtd', 'Kcal']],
+      body: planoR.slice(1).map(r => [r[1], r[2], r[3], r[4] + ' ' + (r[5] || 'g'), r[6]]),
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [245, 158, 11], textColor: 255 },
+      alternateRowStyles: { fillColor: [255, 251, 235] }
+    });
+  }
+
+  // Rodapé
+  const totalPags = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPags; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+    doc.text(`NutriSaúde — ${_dlHoje()} — Página ${i}/${totalPags}`, 14, doc.internal.pageSize.height - 8);
+  }
+
+  return doc;
+}
+
+function dlRelatorioPDF() {
+  if (!_checkPDF()) return;
+  const doc = _criarRelatorioPDF();
+  if (!doc) return;
+  doc.save(`relatorio_${_dlPaciente()}_${_dlHoje()}.pdf`);
+}
+
+/* ── ZIP Geral ───────────────────────────────────── */
+async function dlTudoZIP() {
+  if (!window.JSZip) { mostrarToast('Biblioteca ZIP não carregada', 'erro'); return; }
+  mostrarToast('Gerando ZIP...');
+  const zip  = new JSZip();
+  const nome = _dlPaciente();
+  const hoje = _dlHoje();
+
+  // CSVs
+  if ((exames        || []).length) zip.file(`exames_${nome}_${hoje}.csv`,          '\uFEFF' + _csvStr(_examesRows()));
+  if ((medicamentos  || []).length) zip.file(`medicamentos_${nome}_${hoje}.csv`,     '\uFEFF' + _csvStr(_medsRows()));
+  const planoR = _planoRows();
+  if (planoR.length > 1)            zip.file(`plano_alimentar_${nome}_${hoje}.csv`, '\uFEFF' + _csvStr(planoR));
+
+  // XLS (plano)
+  if (window.XLSX && planoR.length > 1) {
+    const wb = XLSX.utils.book_new();
+    ['Exames','Medicamentos','Plano'].forEach((s, i) => {
+      const data = [_examesRows(), _medsRows(), planoR][i];
+      if (data.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), s);
+    });
+    const xlsBytes = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    zip.file(`dados_${nome}_${hoje}.xlsx`, xlsBytes);
+  }
+
+  // PDF relatório
+  if (window.jspdf) {
+    const doc = _criarRelatorioPDF();
+    if (doc) zip.file(`relatorio_${nome}_${hoje}.pdf`, doc.output('arraybuffer'));
+  }
+
+  // Fotos bioimpedância
+  if (fotosBio.length) {
+    const pasta = zip.folder('fotos_bioimpedancia');
+    fotosBio.forEach((f, i) => {
+      const ext = (f.dataUrl.split(';')[0].split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      pasta.file(f.nome || `foto_${i + 1}.${ext}`, f.dataUrl.split(',')[1], { base64: true });
+    });
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  _dlBlob(blob, `nutrisaude_${nome}_${hoje}.zip`);
+  mostrarToast('ZIP gerado ✅');
+}
+
+/* ══════════════════════════════════════════════════
+   MÓDULO: ANÁLISE DE REFEIÇÃO POR FOTO (IA)
+══════════════════════════════════════════════════ */
+let _fotoBase64  = null;
+let _fotoMime    = null;
+let _fotoItensIA = [];   // alimentos retornados pela IA
+
+function abrirModalFoto() {
+  document.getElementById('modal-foto').style.display = 'flex';
+  const temChave = !!localStorage.getItem('ns_anthropic_key');
+  mostrarFotoStep(temChave ? 'upload' : 'key');
+  // Pré-seleciona dia de hoje
+  const DIAS_PT = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const hoje    = DIAS_PT[new Date().getDay()];
+  const selDia  = document.getElementById('foto-sel-dia');
+  if (selDia) selDia.value = hoje;
+}
+
+function fecharModalFoto() {
+  document.getElementById('modal-foto').style.display = 'none';
+  _fotoBase64 = null; _fotoMime = null; _fotoItensIA = [];
+  const fi = document.getElementById('foto-file-input');
+  if (fi) fi.value = '';
+  const prev = document.getElementById('foto-preview');
+  if (prev) { prev.style.display = 'none'; prev.src = ''; }
+  const btn = document.getElementById('btn-analisar-foto');
+  if (btn) btn.style.display = 'none';
+  const dz = document.getElementById('foto-dropzone');
+  if (dz) dz.style.display = 'block';
+  mostrarFotoStep('upload');
+}
+
+function mostrarFotoStep(step) {
+  ['key', 'upload', 'loading', 'resultado'].forEach(s => {
+    const el = document.getElementById('foto-step-' + s);
+    if (el) el.style.display = (s === step ? 'block' : 'none');
+  });
+}
+
+function salvarChaveAPI() {
+  const key = document.getElementById('foto-api-key-input').value.trim();
+  if (!key) { mostrarToast('Insira a chave da API', 'erro'); return; }
+  localStorage.setItem('ns_anthropic_key', key);
+  document.getElementById('foto-api-key-input').value = '';
+  mostrarFotoStep('upload');
+  mostrarToast('Chave salva ✅');
+}
+
+function handleFotoUpload(file) {
+  if (!file) return;
+  _fotoMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    _fotoBase64   = dataUrl.split(',')[1];
+    const prev = document.getElementById('foto-preview');
+    if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
+    const dz = document.getElementById('foto-dropzone');
+    if (dz) dz.style.display = 'none';
+    const btn = document.getElementById('btn-analisar-foto');
+    if (btn) btn.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function analisarFotoComIA() {
+  const key = localStorage.getItem('ns_anthropic_key');
+  if (!key)         { mostrarFotoStep('key');  return; }
+  if (!_fotoBase64) { mostrarToast('Selecione uma foto primeiro', 'erro'); return; }
+
+  mostrarFotoStep('loading');
+
+  const prompt = `Analise esta foto de refeição e identifique todos os alimentos visíveis.\nEstime a quantidade de cada alimento em gramas com base na proporção visual no prato.\nResponda APENAS com JSON válido (sem markdown, sem \`\`\`, sem texto extra) neste formato:\n{\n  "descricao": "descrição breve do prato em português",\n  "alimentos": [\n    {\n      "nome": "nome do alimento em português",\n      "porcao": "porção média",\n      "qtd_g": 150,\n      "kcal": 195,\n      "carb_g": 43.0,\n      "prot_g": 3.6,\n      "gord_g": 0.3\n    }\n  ]\n}\nO campo "porcao" deve descrever a proporção visual: "porção pequena", "porção média", "porção grande", "1 unidade", "2 unidades", "fatia fina", "fatia grossa", etc.\nUse valores nutricionais padrão por 100g para calcular os macros da quantidade estimada.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: _fotoMime, data: _fotoBase64 } },
+            { type: 'text',  text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Erro ' + resp.status);
+    }
+
+    const data     = await resp.json();
+    let   jsonStr  = (data.content?.[0]?.text || '').trim();
+    // Remove markdown code fences if present
+    jsonStr = jsonStr.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '');
+
+    const resultado    = JSON.parse(jsonStr);
+    _fotoItensIA = resultado.alimentos || [];
+
+    // Normaliza valores por 100g para reajuste de quantidade
+    _fotoItensIA.forEach(al => {
+      const base = al.qtd_g > 0 ? (100 / al.qtd_g) : 1;
+      al._kcal100 = +(al.kcal   * base).toFixed(2);
+      al._carb100 = +(al.carb_g * base).toFixed(2);
+      al._prot100 = +(al.prot_g * base).toFixed(2);
+      al._gord100 = +(al.gord_g * base).toFixed(2);
+      al._removido = false;
+    });
+
+    _renderResultadoFoto(resultado.descricao, _fotoItensIA);
+    mostrarFotoStep('resultado');
+
+  } catch (err) {
+    voltarFotoUpload();
+    mostrarToast('Erro: ' + err.message, 'erro');
+  }
+}
+
+function _calcTotalFoto() {
+  return _fotoItensIA.filter(a => !a._removido).reduce((s, a) => s + (a.kcal || 0), 0);
+}
+
+function _atualizarTotalFoto() {
+  const el = document.getElementById('foto-total-kcal');
+  if (el) el.textContent = _calcTotalFoto().toFixed(0) + ' kcal';
+}
+
+function _renderResultadoFoto(descricao, alimentos) {
+  const descEl = document.getElementById('foto-descricao');
+  if (descEl) descEl.textContent = descricao || '';
+
+  const total = alimentos.reduce((s, a) => s + (a.kcal || 0), 0);
+
+  const lista = document.getElementById('foto-alimentos-lista');
+  lista.innerHTML = alimentos.map((al, i) => `
+    <div class="foto-alimento-item" id="foto-al-${i}">
+      <div class="foto-alimento-info">
+        <div class="foto-alimento-nome">${al.nome}${al.porcao ? `<span class="foto-porcao-badge">${al.porcao}</span>` : ''}</div>
+        <div class="foto-alimento-macros" id="foto-macros-${i}">
+          ~<span id="foto-qtd-txt-${i}">${(al.qtd_g||0).toFixed(0)}</span>g &nbsp;·&nbsp;
+          C: ${(al.carb_g||0).toFixed(1)}g &nbsp;·&nbsp;
+          P: ${(al.prot_g||0).toFixed(1)}g &nbsp;·&nbsp;
+          G: ${(al.gord_g||0).toFixed(1)}g
+        </div>
+      </div>
+      <div class="foto-alimento-qtd-wrap">
+        <input class="foto-alimento-qtd" type="number" min="1" step="5" value="${al.qtd_g||100}"
+          onchange="recalcFotoItem(${i}, this.value)" title="Quantidade em gramas" />
+        <span class="foto-alimento-unit">g</span>
+      </div>
+      <span class="foto-alimento-kcal" id="foto-kcal-${i}">${(al.kcal||0).toFixed(0)} kcal</span>
+      <button class="foto-alimento-remove" onclick="removerFotoItem(${i})" title="Remover">✕</button>
+    </div>
+  `).join('') + `
+    <div class="foto-total-row">
+      <span>Total estimado da refeição</span>
+      <span id="foto-total-kcal">${total.toFixed(0)} kcal</span>
+    </div>`;
+}
+
+function recalcFotoItem(i, novaQtdStr) {
+  const novaQtd = parseFloat(novaQtdStr) || 0;
+  const al = _fotoItensIA[i];
+  if (!al) return;
+  const f     = novaQtd / 100;
+  al.qtd_g    = novaQtd;
+  al.kcal     = +((al._kcal100 || 0) * f).toFixed(1);
+  al.carb_g   = +((al._carb100 || 0) * f).toFixed(1);
+  al.prot_g   = +((al._prot100 || 0) * f).toFixed(1);
+  al.gord_g   = +((al._gord100 || 0) * f).toFixed(1);
+  const kcalEl  = document.getElementById('foto-kcal-'  + i);
+  const macroEl = document.getElementById('foto-macros-' + i);
+  const qtdEl   = document.getElementById('foto-qtd-txt-' + i);
+  if (kcalEl)  kcalEl.textContent = al.kcal.toFixed(0) + ' kcal';
+  if (qtdEl)   qtdEl.textContent  = novaQtd.toFixed(0);
+  if (macroEl) macroEl.innerHTML  =
+    `~<span id="foto-qtd-txt-${i}">${novaQtd.toFixed(0)}</span>g &nbsp;·&nbsp; C: ${al.carb_g.toFixed(1)}g &nbsp;·&nbsp; P: ${al.prot_g.toFixed(1)}g &nbsp;·&nbsp; G: ${al.gord_g.toFixed(1)}g`;
+  _atualizarTotalFoto();
+}
+
+function removerFotoItem(i) {
+  const al = _fotoItensIA[i];
+  if (al) al._removido = true;
+  const el = document.getElementById('foto-al-' + i);
+  if (el) el.style.display = 'none';
+  _atualizarTotalFoto();
+}
+
+function voltarFotoUpload() {
+  _fotoBase64 = null; _fotoMime = null;
+  const fi = document.getElementById('foto-file-input');
+  if (fi) fi.value = '';
+  const prev = document.getElementById('foto-preview');
+  if (prev) { prev.style.display = 'none'; prev.src = ''; }
+  const btn = document.getElementById('btn-analisar-foto');
+  if (btn) btn.style.display = 'none';
+  const dz = document.getElementById('foto-dropzone');
+  if (dz) dz.style.display = 'block';
+  mostrarFotoStep('upload');
+}
+
+function confirmarAlimentosFoto() {
+  const dia   = document.getElementById('foto-sel-dia').value;
+  const ref   = document.getElementById('foto-sel-refeicao').value;
+  const tipo  = modoPlano;
+  const ativos = _fotoItensIA.filter(al => al && !al._removido);
+  if (!ativos.length) { mostrarToast('Nenhum alimento selecionado', 'erro'); return; }
+
+  const alvo = tipo === 'medico' ? planoMedico : plano;
+  if (!alvo[dia])      alvo[dia]      = {};
+  if (!alvo[dia][ref]) alvo[dia][ref] = [];
+
+  ativos.forEach(al => {
+    alvo[dia][ref].push({
+      id:      Date.now() + Math.random(),
+      nome:    al.nome,
+      emoji:   '📸',
+      qtd:     al.qtd_g,
+      qtdReal: al.qtd_g,
+      unit:    'g',
+      kcal:    al.kcal,
+      carb:    al.carb_g,
+      prot:    al.prot_g,
+      gord:    al.gord_g
+    });
+  });
+
+  if (tipo === 'medico') localStorage.setItem('ns_plano_medico', JSON.stringify(planoMedico));
+  else dbSalvarPlano(plano);
+
+  renderPlano();
+  fecharModalFoto();
+  mostrarToast(`${ativos.length} alimento${ativos.length > 1 ? 's adicionados' : ' adicionado'} ao plano ✅`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
