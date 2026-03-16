@@ -1872,10 +1872,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (medInicio) medInicio.value = hoje;
   if (exData)    exData.value    = hoje;
 
-  // Cálculo automático do IMC ao digitar peso ou altura
+  // IMC: recalcula em tempo real ao digitar; salva ao sair do campo
   ['paciente-peso', 'paciente-altura'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener('input', calcularIMC);
+    if (el) {
+      el.addEventListener('input',  calcularIMC);  // atualiza tela em tempo real
+      el.addEventListener('change', autoSalvarBio); // salva no banco ao perder foco
+    }
   });
 
   // Pré-seleciona o dia de hoje no resumo calórico
@@ -3299,29 +3302,52 @@ function getDadosBio() {
 /* ── Calcular IMC e exibir no card ───────────────────────────── */
 function calcularIMC() {
   const { peso, altura } = getDadosBio();
-  const inputEl  = document.getElementById('imc-resultado');
-  const labelEl  = document.getElementById('imc-valor');
+  const inputEl = document.getElementById('imc-resultado');
+  const labelEl = document.getElementById('imc-valor');
 
   if (!peso || !altura) {
     if (inputEl) inputEl.value = '';
-    if (labelEl) labelEl.textContent = '';
+    if (labelEl) { labelEl.textContent = ''; labelEl.style.color = ''; }
+    perfil.imc = null;
     return;
   }
 
   const altM = altura / 100;
   const imc  = peso / (altM * altM);
   let classe = '', cor = '';
-  if      (imc < 18.5) { classe = 'Abaixo do peso';       cor = '#1976d2'; }
-  else if (imc < 25)   { classe = 'Peso normal';           cor = '#43a047'; }
-  else if (imc < 30)   { classe = 'Sobrepeso';             cor = '#fb8c00'; }
-  else if (imc < 35)   { classe = 'Obesidade Grau I';      cor = '#e53935'; }
-  else if (imc < 40)   { classe = 'Obesidade Grau II';     cor = '#b71c1c'; }
-  else                 { classe = 'Obesidade Grau III';     cor = '#7f0000'; }
+  if      (imc < 18.5) { classe = 'Abaixo do peso';   cor = '#1976d2'; }
+  else if (imc < 25)   { classe = 'Peso normal';       cor = '#43a047'; }
+  else if (imc < 30)   { classe = 'Sobrepeso';         cor = '#fb8c00'; }
+  else if (imc < 35)   { classe = 'Obesidade Grau I';  cor = '#e53935'; }
+  else if (imc < 40)   { classe = 'Obesidade Grau II'; cor = '#b71c1c'; }
+  else                 { classe = 'Obesidade Grau III'; cor = '#7f0000'; }
 
   if (inputEl) inputEl.value = imc.toFixed(1) + ' kg/m²';
   if (labelEl) { labelEl.textContent = classe; labelEl.style.color = cor; }
 
+  // Mantém IMC atualizado no objeto perfil em memória
+  perfil.imc    = parseFloat(imc.toFixed(1));
+  perfil.peso   = peso;
+  perfil.altura = altura;
+
   atualizarDashboard();
+}
+
+/* ── Auto-salva bio ao sair do campo peso/altura ─────────────── */
+function autoSalvarBio() {
+  const peso   = parseFloat(document.getElementById('paciente-peso')?.value)   || null;
+  const altura = parseFloat(document.getElementById('paciente-altura')?.value) || null;
+  if (!peso || !altura) return; // só salva quando ambos preenchidos
+
+  // Atualiza perfil com todos os campos bio atuais
+  perfil.peso     = peso;
+  perfil.altura   = altura;
+  perfil.sexo     = document.getElementById('paciente-sexo')?.value     || perfil.sexo     || '';
+  perfil.cintura  = parseFloat(document.getElementById('paciente-cintura')?.value)  || perfil.cintura  || null;
+  perfil.atividade= document.getElementById('paciente-atividade')?.value || perfil.atividade|| '';
+  perfil.objetivo = document.getElementById('paciente-objetivo')?.value  || perfil.objetivo || '';
+
+  dbSalvarPerfil({ ...perfil, usoMeds }); // salva silenciosamente (sem toast)
 }
 
 /* ── Calculadora TMB / TDEE (Mifflin-St Jeor) ───────────────── */
