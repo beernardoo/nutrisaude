@@ -264,14 +264,11 @@ function atualizarHeaderUsuario(email) {
   if (el) el.textContent = email || '';
 }
 
-/* ── Migração de dados do localStorage ─────────────────────────────── */
+/* ── Migração de dados do localStorage — desativado ─────────────────── */
 function verificarMigracaoLocalStorage() {
-  const temDados = ['ns_medicamentos','ns_exames','ns_perfil','ns_plano','ns_uso_meds']
-    .some(k => localStorage.getItem(k));
-  if (!temDados) return;
-
-  const toast = document.getElementById('migration-toast');
-  if (toast) toast.style.display = 'flex';
+  // Limpa silenciosamente chaves antigas sem exibir toast
+  ['ns_medicamentos','ns_exames','ns_perfil','ns_plano','ns_uso_meds']
+    .forEach(k => localStorage.removeItem(k));
 }
 
 async function migrarLocalStorage() {
