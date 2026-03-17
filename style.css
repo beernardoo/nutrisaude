@@ -1126,7 +1126,7 @@ textarea { resize: vertical; }
 .auth-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #050705 0%, #0a1a0d 50%, #050a05 100%);
+  background: radial-gradient(ellipse at center, #0b1f3a 0%, #05101f 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1135,8 +1135,8 @@ textarea { resize: vertical; }
 }
 
 .auth-card {
-  background: #111714;
-  border: 1px solid rgba(57,211,83,.2);
+  background: #0b1a30;
+  border: 1px solid rgba(74,222,128,.2);
   border-radius: 20px;
   width: 100%;
   max-width: 420px;
@@ -1159,7 +1159,7 @@ textarea { resize: vertical; }
 .auth-logo-titulo {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #39d353;
+  color: var(--primary);
   margin: 0;
 }
 .auth-logo-sub {
