@@ -83,7 +83,7 @@ async function carregarDados() {
       usoMeds.length = 0;
       (p.uso_meds || []).forEach(m => usoMeds.push(m));
       // Sincroniza cache local com dados do Supabase
-      localStorage.setItem('ns_perfil', JSON.stringify({ ...perfil, usoMeds: p.uso_meds || [] }));
+      localStorage.setItem('ns_cache_perfil', JSON.stringify({ ...perfil, usoMeds: p.uso_meds || [] }));
     }
 
     // ── Plano alimentar ───────────────────────────────────────────────
@@ -118,7 +118,7 @@ async function dbSalvarPerfil(obj) {
 
   // Backup local imediato — garante persistência mesmo com Supabase lento ou offline
   const cacheLocal = { ...obj, imc: imcVal };
-  localStorage.setItem('ns_perfil', JSON.stringify(cacheLocal));
+  localStorage.setItem('ns_cache_perfil', JSON.stringify(cacheLocal));
 
   const uid = await dbUserId();
   if (!uid) return;

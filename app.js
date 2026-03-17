@@ -298,7 +298,7 @@ let exames         = [];
 let plano          = JSON.parse(localStorage.getItem('ns_plano_paciente') || '{}'); // cache local
 let planoMedico    = JSON.parse(localStorage.getItem('ns_plano_medico') || '{}');
 let modoPlano      = localStorage.getItem('ns_modo_plano') || 'medico'; // 'medico' | 'paciente'
-let perfil         = JSON.parse(localStorage.getItem('ns_perfil') || '{}'); // cache local — sobrescrito pelo Supabase após login
+let perfil         = JSON.parse(localStorage.getItem('ns_cache_perfil') || '{}'); // cache local — sobrescrito pelo Supabase após login
 let usoMeds        = (perfil.usoMeds || []);   // restaura uso de medicamentos do cache
 let categoriaAtiva = 'todos';
 
@@ -1743,7 +1743,7 @@ function gerarAnaliseSuple() {
 
   // Painel GLP-1
   const pGlp1  = document.getElementById('suple-glp1-panel');
-  const pLoc   = JSON.parse(localStorage.getItem('ns_perfil') || '{}');
+  const pLoc   = JSON.parse(localStorage.getItem('ns_cache_perfil') || '{}');
   if (pLoc.glp1Ativo) {
     pGlp1.style.display = 'block';
     document.getElementById('suple-glp1-intro').innerHTML =
