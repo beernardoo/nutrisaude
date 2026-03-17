@@ -8,26 +8,26 @@ html {
 }
 
 :root {
-  --primary:    #a855f7;
-  --primary-dk: #9333ea;
-  --success:    #4ade80;
+  --primary:    #39d353;
+  --primary-dk: #2ab545;
+  --success:    #39d353;
   --warning:    #fbbf24;
   --danger:     #f87171;
   --info:       #38bdf8;
-  --bg:         #0d0d0d;
-  --surface:    #161616;
-  --surface-2:  #1f1f1f;
-  --border:     rgba(168,85,247,.18);
-  --text:       #f0f0f0;
-  --muted:      #94a3b8;
-  --radius:     14px;
-  --shadow:     0 1px 3px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.4);
-  --shadow-lg:  0 8px 32px rgba(168,85,247,.15);
-  --glow:       0 0 24px rgba(168,85,247,.2);
+  --bg:         #0a0c0b;
+  --surface:    #111714;
+  --surface-2:  #161d18;
+  --border:     rgba(57,211,83,.12);
+  --text:       #e8f5ea;
+  --muted:      #6b7c6f;
+  --radius:     12px;
+  --shadow:     0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.5);
+  --glow:       0 0 20px rgba(57,211,83,.18);
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -44,14 +44,14 @@ button, a, input, select, textarea, label {
 
 /* ===== HEADER ===== */
 .header {
-  background: linear-gradient(135deg, #0d0d0d 0%, #1a0a2e 100%);
-  border-bottom: 1px solid rgba(168,85,247,.25);
+  background: #0a0c0b;
+  border-bottom: 1px solid rgba(57,211,83,.2);
   color: var(--text);
   padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 20px rgba(168,85,247,.15);
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
 }
 .header-inner {
   max-width: 1200px;
@@ -65,12 +65,7 @@ button, a, input, select, textarea, label {
 }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon { font-size: 2.2rem; }
-.logo h1 {
-  font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px;
-  background: linear-gradient(90deg, #a855f7, #ec4899, #f97316);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+.logo h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.5px; color: var(--text); }
 .logo p  { font-size: .78rem; opacity: .7; margin-top: 1px; color: var(--muted); }
 
 .nav-tabs {
@@ -79,19 +74,19 @@ button, a, input, select, textarea, label {
   flex-wrap: wrap;
 }
 .tab-btn {
-  background: rgba(168,85,247,.07);
-  border: 1px solid rgba(168,85,247,.18);
+  background: rgba(57,211,83,.07);
+  border: 1px solid rgba(57,211,83,.18);
   color: var(--muted);
   padding: 8px 16px;
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: .85rem;
   font-weight: 500;
   transition: all .2s;
   white-space: nowrap;
 }
-.tab-btn:hover  { background: rgba(168,85,247,.14); color: var(--text); }
-.tab-btn.active { background: linear-gradient(135deg, #a855f7, #ec4899); border-color: transparent; color: #fff; font-weight: 700; box-shadow: 0 4px 14px rgba(168,85,247,.35); }
+.tab-btn:hover  { background: rgba(57,211,83,.13); color: var(--text); }
+.tab-btn.active { background: rgba(57,211,83,.15); border-color: #39d353; color: #39d353; font-weight: 700; }
 
 /* ===== LAYOUT ===== */
 .main-content {
@@ -121,12 +116,12 @@ button, a, input, select, textarea, label {
   border: 1px solid var(--border);
 }
 .card-header {
-  background: #111111;
+  background: #0a0c0b;
   padding: 14px 20px;
   font-weight: 700;
   font-size: .95rem;
-  color: #a855f7;
-  border-bottom: 1px solid rgba(168,85,247,.15);
+  color: #39d353;
+  border-bottom: 1px solid rgba(57,211,83,.12);
 }
 .card-body { padding: 20px; }
 
