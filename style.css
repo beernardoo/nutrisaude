@@ -8,22 +8,22 @@ html {
 }
 
 :root {
-  --primary:    #39d353;
-  --primary-dk: #2ab545;
-  --success:    #39d353;
+  --primary:    #4ade80;
+  --primary-dk: #22c55e;
+  --success:    #4ade80;
   --warning:    #fbbf24;
   --danger:     #f87171;
   --info:       #38bdf8;
-  --bg:         #0a0c0b;
-  --surface:    #111714;
-  --surface-2:  #161d18;
-  --border:     rgba(57,211,83,.12);
-  --text:       #e8f5ea;
-  --muted:      #6b7c6f;
+  --bg:         #05101f;
+  --surface:    #0b1a30;
+  --surface-2:  #102240;
+  --border:     rgba(74,222,128,.15);
+  --text:       #e2f0ff;
+  --muted:      #7a9bbf;
   --radius:     12px;
-  --shadow:     0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,.5);
-  --glow:       0 0 20px rgba(57,211,83,.18);
+  --shadow:     0 1px 3px rgba(0,0,0,.5), 0 4px 16px rgba(0,20,60,.3);
+  --shadow-lg:  0 8px 32px rgba(0,20,60,.5);
+  --glow:       0 0 22px rgba(74,222,128,.2);
 }
 
 body {
@@ -44,14 +44,14 @@ button, a, input, select, textarea, label {
 
 /* ===== HEADER ===== */
 .header {
-  background: #0a0c0b;
-  border-bottom: 1px solid rgba(57,211,83,.2);
+  background: linear-gradient(135deg, #05101f 0%, #0b1f3a 100%);
+  border-bottom: 1px solid rgba(74,222,128,.2);
   color: var(--text);
   padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+  box-shadow: 0 2px 16px rgba(0,20,60,.5);
 }
 .header-inner {
   max-width: 1200px;
@@ -74,8 +74,8 @@ button, a, input, select, textarea, label {
   flex-wrap: wrap;
 }
 .tab-btn {
-  background: rgba(57,211,83,.07);
-  border: 1px solid rgba(57,211,83,.18);
+  background: rgba(74,222,128,.07);
+  border: 1px solid rgba(74,222,128,.18);
   color: var(--muted);
   padding: 8px 16px;
   border-radius: 8px;
@@ -85,8 +85,8 @@ button, a, input, select, textarea, label {
   transition: all .2s;
   white-space: nowrap;
 }
-.tab-btn:hover  { background: rgba(57,211,83,.13); color: var(--text); }
-.tab-btn.active { background: rgba(57,211,83,.15); border-color: #39d353; color: #39d353; font-weight: 700; }
+.tab-btn:hover  { background: rgba(74,222,128,.13); color: var(--text); }
+.tab-btn.active { background: rgba(74,222,128,.16); border-color: #4ade80; color: #4ade80; font-weight: 700; }
 
 /* ===== LAYOUT ===== */
 .main-content {
@@ -116,12 +116,12 @@ button, a, input, select, textarea, label {
   border: 1px solid var(--border);
 }
 .card-header {
-  background: #0a0c0b;
+  background: #071325;
   padding: 14px 20px;
   font-weight: 700;
   font-size: .95rem;
-  color: #39d353;
-  border-bottom: 1px solid rgba(57,211,83,.12);
+  color: #4ade80;
+  border-bottom: 1px solid rgba(74,222,128,.13);
 }
 .card-body { padding: 20px; }
 
