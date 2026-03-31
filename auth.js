@@ -202,6 +202,7 @@ async function authOnLogin(user) {
   atualizarHeaderUsuario(user.email);
   await carregarDados();        // db.js
   verificarMigracaoLocalStorage();
+  if (typeof adminVerificar === 'function') adminVerificar();
 }
 
 /* ── Logout ────────────────────────────────────────────────────────── */

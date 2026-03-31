@@ -3,10 +3,10 @@
    Substitui localStorage. Todas as operações são assíncronas via Supabase.
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── Helper: obtém user_id atual ────────────────────────────────────── */
+/* ── Helper: obtém user_id atual (via getSession — sem chamada de rede) ── */
 async function dbUserId() {
-  const { data: { user } } = await _supabase.auth.getUser();
-  return user?.id ?? null;
+  const { data: { session } } = await _supabase.auth.getSession();
+  return session?.user?.id ?? null;
 }
 
 /* ── Helper: log de erros amigável ─────────────────────────────────── */

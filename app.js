@@ -312,6 +312,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'suplementacao') setTimeout(gerarAnaliseSuple, 50);
     if (btn.dataset.tab === 'dashboard')     setTimeout(atualizarDashboard, 50);
     if (btn.dataset.tab === 'downloads')     setTimeout(atualizarInfoDownloads, 50);
+    if (btn.dataset.tab === 'admin' && typeof adminCarregarPacientes === 'function') setTimeout(adminCarregarPacientes, 50);
   });
 });
 

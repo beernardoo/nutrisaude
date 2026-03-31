@@ -37,6 +37,7 @@
         <button class="tab-btn" data-tab="suplementacao">💊 Suplementação</button>
         <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
         <button class="tab-btn" data-tab="downloads">📥 Downloads</button>
+        <button class="tab-btn" data-tab="admin" id="tab-btn-admin" style="display:none;background:var(--accent);color:#fff">🛡️ Admin</button>
       </nav>
       <button id="btn-view-toggle" class="btn-view-toggle" onclick="toggleModoView()" title="Alternar modo de visualização">
         📋 Ver tudo
@@ -977,6 +978,34 @@
 
     </section>
 
+    <!-- ==================== ABA: ADMIN ==================== -->
+    <section id="tab-admin" class="tab-panel">
+      <div class="section-header">
+        <h2>🛡️ Painel Administrativo</h2>
+        <p>Visualize e gerencie todos os pacientes cadastrados na plataforma</p>
+      </div>
+
+      <div class="card" style="padding:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0">👥 Pacientes Cadastrados</h3>
+          <button class="btn btn-primary" onclick="adminCarregarPacientes()">🔄 Atualizar</button>
+        </div>
+        <div id="admin-loading" style="display:none;color:var(--text-muted);padding:12px">⏳ Carregando...</div>
+        <div id="admin-lista-pacientes"></div>
+      </div>
+
+      <!-- Detalhes do paciente selecionado -->
+      <div id="admin-detalhe" style="display:none">
+        <div class="card" style="padding:20px;margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 id="admin-detalhe-titulo" style="margin:0"></h3>
+            <button class="btn btn-outline" onclick="adminFecharDetalhe()">✕ Fechar</button>
+          </div>
+          <div id="admin-detalhe-corpo"></div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="footer">
@@ -1062,6 +1091,7 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js?v=20260317c"></script>
+  <script src="admin.js?v=20260331a"></script>
 
   <!-- ==================== MODAL: ANALISAR REFEIÇÃO POR FOTO ==================== -->
   <div id="modal-foto" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalFoto()">
